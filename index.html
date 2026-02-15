@@ -12,7 +12,7 @@
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- Firebase Compat SDKs (Browser-friendly version) -->
+    <!-- Firebase Compat SDKs (Browser-friendly global version) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
@@ -23,7 +23,7 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         details summary::-webkit-details-marker { display: none; }
         /* Prevent layout shift during icon load */
-        .lucide { vertical-align: middle; }
+        .lucide { vertical-align: middle; display: inline-block; }
     </style>
 </head>
 <body class="bg-gray-50/50">
@@ -34,7 +34,7 @@
 
         // --- FIREBASE CONFIGURATION ---
         const firebaseConfig = {
-            apiKey: "AIzaSyCGHM_MLic73Vg5xJ9DZGZwkFm4fZQifgs",
+            apiKey: "AIzaSyCjK9VK43HIhf_7D6wZ0DubE869A7eFDP0",
             authDomain: "gi-learning-e-booklet-24602.firebaseapp.com",
             projectId: "gi-learning-e-booklet-24602",
             storageBucket: "gi-learning-e-booklet-24602.firebasestorage.app",
@@ -43,7 +43,7 @@
             measurementId: "G-ZV9YB3LQ3B"
         };
 
-        // Initialize Firebase safely
+        // Initialize Firebase using the global 'firebase' object provided by compat scripts
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         }
@@ -56,12 +56,12 @@
             useEffect(() => { 
                 if (window.lucide) window.lucide.createIcons(); 
             }, [name]);
-            return <i data-lucide={name} style={{ width: size, height: size }} className={`inline-block ${className}`}></i>;
+            return <i data-lucide={name} style={{ width: size, height: size }} className={`${className}`}></i>;
         };
 
         const ProgressBar = ({ progress }) => (
             <div className="w-full bg-gray-200 rounded-full h-2 mt-2 overflow-hidden">
-                <div className="bg-[#005EB8] h-full transition-all duration-500" style={{ width: `${progress}%` }}></div>
+                <div className="bg-[#005EB8] h-full transition-all duration-500" style={{ width: `${progress || 0}%` }}></div>
             </div>
         );
 
@@ -181,7 +181,7 @@
                     if (isRegistering) {
                         const cred = await auth.createUserWithEmailAndPassword(email, password);
                         await cred.user.updateProfile({ displayName: fullName });
-                        // Set basic profile in background
+                        // Set profile doc and wait for it
                         await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('app_users').doc(cred.user.uid).set({
                             username: email, name: fullName, role: 'trainee', createdAt: new Date().toISOString()
                         });
@@ -211,7 +211,7 @@
                     )}
                     <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full border-t-8 border-[#005EB8]">
                         <div className="text-center mb-6">
-                            <div className="bg-[#005EB8] text-white w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-4 font-bold shadow-lg">NHS</div>
+                            <div className="bg-[#005EB8] text-white w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-4 font-bold shadow-lg text-sm">NHS</div>
                             <h1 className="text-2xl font-bold">Endoscopy Portal</h1>
                             <p className="text-xs text-gray-400 mt-1 uppercase tracking-widest">Frimley Health Learning</p>
                         </div>
@@ -224,11 +224,11 @@
                             {isRegistering && <input type="text" placeholder="Full Name" className="w-full p-3 border rounded-xl bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none" onChange={e => setFullName(e.target.value)} required />}
                             <input type="email" placeholder="Email" className="w-full p-3 border rounded-xl bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none" onChange={e => setEmail(e.target.value)} required />
                             <input type="password" placeholder="Password" className="w-full p-3 border rounded-xl bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none" onChange={e => setPassword(e.target.value)} required />
-                            <button className="w-full bg-[#005EB8] text-white py-3.5 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg">
-                                {loading ? <Icon name="loader" className="animate-spin mx-auto" /> : (isRegistering ? "Register Account" : "Sign In")}
+                            <button className="w-full bg-[#005EB8] text-white py-3.5 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg flex items-center justify-center gap-2">
+                                {loading ? <Icon name="loader" className="animate-spin" /> : (isRegistering ? "Register Account" : "Sign In")}
                             </button>
                         </form>
-                        <button onClick={() => setIsRegistering(!isRegistering)} className="w-full mt-6 text-sm text-blue-600 font-medium hover:underline">
+                        <button onClick={() => setIsRegistering(!isRegistering)} className="w-full mt-6 text-sm text-blue-600 font-medium hover:underline text-center block">
                             {isRegistering ? "Back to Login" : "Need an account? Register"}
                         </button>
                     </div>
@@ -312,7 +312,9 @@
             const [trainees, setTrainees] = useState([]);
             useEffect(() => {
                 return db.collection('artifacts').doc(appId).collection('public').doc('data').collection('app_users')
-                    .onSnapshot(snap => setTrainees(snap.docs.map(d => ({uid: d.id, ...d.data()})).filter(u => u.role === 'trainee')));
+                    .onSnapshot(snap => {
+                        setTrainees(snap.docs.map(d => ({uid: d.id, ...d.data()})).filter(u => u.role === 'trainee'));
+                    });
             }, []);
 
             return (
@@ -327,7 +329,7 @@
                                     <Icon name="user" />
                                 </div>
                                 <h3 className="font-bold text-gray-900">{t.name || 'User'}</h3>
-                                <p className="text-xs text-gray-500 font-mono mt-1">{t.username || t.email}</p>
+                                <p className="text-xs text-gray-500 font-mono mt-1 truncate">{t.username || t.email}</p>
                             </button>
                         ))}
                     </div>
@@ -345,22 +347,33 @@
             useEffect(() => {
                 const unsubscribe = auth.onAuthStateChanged(async (u) => {
                     if (u) {
-                        // Immediately set basic user to avoid blank screen
-                        setUser({ 
+                        // Immediately set auth info to prevent blank screen
+                        const basicUser = { 
                             uid: u.uid, 
                             name: u.displayName || 'User', 
                             username: u.email, 
                             role: 'trainee' 
-                        });
+                        };
+                        setUser(basicUser);
 
-                        // Then fetch extended profile in background
+                        // Try to get profile doc
                         try {
-                            const snap = await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('app_users').doc(u.uid).get();
+                            const userRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('app_users').doc(u.uid);
+                            const snap = await userRef.get();
+                            
                             if (snap.exists()) {
                                 setUser(prev => ({ ...prev, ...snap.data() }));
+                            } else {
+                                // If doc missing (race condition), listen for it
+                                const unsubDoc = userRef.onSnapshot((docSnap) => {
+                                    if (docSnap.exists()) {
+                                        setUser(prev => ({ ...prev, ...docSnap.data() }));
+                                        unsubDoc();
+                                    }
+                                });
                             }
                         } catch (e) {
-                            console.warn("Profile fetch issue, continuing with base auth info.", e);
+                            console.warn("Profile fetch issue", e);
                         }
                     } else { 
                         setUser(null); 
@@ -379,9 +392,9 @@
             
             if (!user) return <AuthScreen />;
 
-            // Safe First Name extraction
-            const userName = user?.name || 'User';
-            const firstName = typeof userName === 'string' ? userName.split(' ')[0] : 'User';
+            // Defensively extract name
+            const currentUserName = user?.name || 'User';
+            const firstName = typeof currentUserName === 'string' ? currentUserName.split(' ')[0] : 'User';
 
             return (
                 <div className="min-h-screen flex flex-col">
@@ -392,7 +405,7 @@
                         </div>
                         <div className="flex items-center gap-6">
                             <div className="text-right hidden sm:block border-r pr-6 border-gray-100">
-                                <p className="text-xs font-bold text-gray-900">{userName}</p>
+                                <p className="text-xs font-bold text-gray-900">{currentUserName}</p>
                                 <p className="text-[10px] text-[#005EB8] uppercase font-bold tracking-wider">{user?.role || 'trainee'}</p>
                             </div>
                             <button onClick={() => auth.signOut()} className="text-gray-400 hover:text-red-500 transition-colors p-2 rounded-lg hover:bg-red-50" title="Logout">
