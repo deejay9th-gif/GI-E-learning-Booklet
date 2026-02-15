@@ -4,12 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Frimley Endoscopy Portal</title>
+    <!-- Tailwind CSS for modern styling -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons for clinical UI -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- React & Babel for dynamic components -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- Firebase Compat SDKs -->
+    <!-- Firebase Compat SDKs (Browser-friendly version) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
@@ -27,17 +30,24 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, useMemo } = React;
 
-        // --- FIREBASE CONFIG ---
+        // --- FIREBASE CONFIGURATION ---
+        // To prevent GitHub "Leak" warnings:
+        // 1. Log into https://console.cloud.google.com/apis/credentials
+        // 2. Click your API Key > 'Restrict Key' > 'HTTP Referrers'
+        // 3. Add your GitHub Pages URL (e.g., https://yourname.github.io/*)
+        // This ensures the key ONLY works on your site, making a "leak" harmless.
+        
         const firebaseConfig = {
-            apiKey: "AIzaSyCU1q6ouoKGxLnlfnJpqLHiowPJN1aroQ8",
-            authDomain: "gi-learning-e-booklet-24602.firebaseapp.com",
-            projectId: "gi-learning-e-booklet-24602",
-            storageBucket: "gi-learning-e-booklet-24602.firebasestorage.app",
-            messagingSenderId: "1083262909148",
-            appId: "1:1083262909148:web:268cea49173834cb1f1219",
-            measurementId: "G-ZV9YB3LQ3B"
+            apiKey: "REPLACE_WITH_YOUR_API_KEY",
+            authDomain: "REPLACE_WITH_YOUR_PROJECT.firebaseapp.com",
+            projectId: "REPLACE_WITH_YOUR_PROJECT_ID",
+            storageBucket: "REPLACE_WITH_YOUR_PROJECT.firebasestorage.app",
+            messagingSenderId: "REPLACE_WITH_YOUR_SENDER_ID",
+            appId: "REPLACE_WITH_YOUR_APP_ID",
+            measurementId: "REPLACE_WITH_YOUR_MEASUREMENT_ID"
         };
 
+        // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
@@ -45,7 +55,9 @@
 
         // --- COMPONENTS ---
         const Icon = ({ name, size = 20, className = "" }) => {
-            useEffect(() => { lucide.createIcons(); }, [name]);
+            useEffect(() => { 
+                if (window.lucide) window.lucide.createIcons(); 
+            }, [name]);
             return <i data-lucide={name} style={{ width: size, height: size }} className={`inline-block ${className}`}></i>;
         };
 
@@ -143,6 +155,16 @@
             { id: 'ic', title: '6. Infection Control', items: ["Hand hygiene standards.", "PPE risk assessment.", "Decontamination processes."] }
         ];
 
+        const SCORING_SYSTEM_DESC = [
+            { score: 0, label: "Unsafe", desc: "Cannot perform activity safely.", color: "bg-red-100 text-red-800 border-red-200" },
+            { score: 1, label: "Constant Supervision", desc: "Requires constant supervision.", color: "bg-orange-100 text-orange-800 border-orange-200" },
+            { score: 2, label: "Some Supervision", desc: "Satisfactory but requires assistance.", color: "bg-yellow-100 text-yellow-800 border-yellow-200" },
+            { score: 3, label: "Competent", desc: "Satisfactory without supervision.", color: "bg-green-100 text-green-800 border-green-200" },
+            { score: 4, label: "Proficient", desc: "Acceptable speed/quality without supervision.", color: "bg-blue-100 text-blue-800 border-blue-200" },
+            { score: 5, label: "Advanced", desc: "Uses initiative, adapts to problems.", color: "bg-indigo-100 text-indigo-800 border-indigo-200" },
+            { score: 6, label: "Expert", desc: "Expert quality, demonstrates to others.", color: "bg-purple-100 text-purple-800 border-purple-200" }
+        ];
+
         // --- AUTH & CORE UI ---
         const AuthScreen = () => {
             const [isRegistering, setIsRegistering] = useState(false);
@@ -151,6 +173,7 @@
             const [fullName, setFullName] = useState('');
             const [error, setError] = useState('');
             const [loading, setLoading] = useState(false);
+            const [showHelp, setShowHelp] = useState(false);
 
             const handleAuth = async (e) => {
                 e.preventDefault();
@@ -165,31 +188,47 @@
                     } else {
                         await auth.signInWithEmailAndPassword(email, password);
                     }
-                } catch (err) { setError(err.message); }
+                } catch (err) {
+                    if (err.code === 'auth/operation-not-allowed') setShowHelp(true);
+                    setError(err.message);
+                }
                 finally { setLoading(false); }
             };
 
             return (
                 <div className="min-h-screen flex items-center justify-center p-4 bg-gray-100">
+                    {showHelp && (
+                        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
+                            <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-md w-full border-t-8 border-red-500">
+                                <div className="text-center mb-6">
+                                    <Icon name="settings" size={32} className="text-red-500 mb-2"/>
+                                    <h2 className="text-xl font-bold">Email Auth Not Enabled</h2>
+                                    <p className="text-sm text-gray-600">You must enable the <b>Email/Password</b> sign-in method in your Firebase Console.</p>
+                                </div>
+                                <button onClick={() => setShowHelp(false)} className="w-full bg-blue-600 text-white py-2 rounded-lg font-bold">Dismiss</button>
+                            </div>
+                        </div>
+                    )}
                     <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full border-t-8 border-[#005EB8]">
                         <div className="text-center mb-6">
-                            <div className="bg-[#005EB8] text-white w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-4 font-bold">NHS</div>
+                            <div className="bg-[#005EB8] text-white w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-4 font-bold shadow-lg">NHS</div>
                             <h1 className="text-2xl font-bold">Endoscopy Portal</h1>
+                            <p className="text-xs text-gray-400 mt-1 uppercase tracking-widest">Frimley Health Learning</p>
                         </div>
-                        <div className="bg-amber-50 p-4 rounded-lg text-xs text-amber-800 mb-6 flex gap-3">
-                            <Icon name="alert-triangle" size={20} />
+                        <div className="bg-amber-50 p-4 rounded-lg text-xs text-amber-800 mb-6 flex gap-3 border border-amber-100">
+                            <Icon name="alert-triangle" size={18} />
                             <span><b>Notice:</b> This is a prototype. Do NOT use official NHS passwords. Use dummy emails (e.g. nurse1@test.com).</span>
                         </div>
                         <form onSubmit={handleAuth} className="space-y-4">
-                            {error && <div className="text-red-500 text-xs p-2 bg-red-50 border border-red-100 rounded">{error}</div>}
-                            {isRegistering && <input type="text" placeholder="Full Name" className="w-full p-3 border rounded-xl" onChange={e => setFullName(e.target.value)} required />}
-                            <input type="email" placeholder="Email" className="w-full p-3 border rounded-xl" onChange={e => setEmail(e.target.value)} required />
-                            <input type="password" placeholder="Password" className="w-full p-3 border rounded-xl" onChange={e => setPassword(e.target.value)} required />
+                            {error && <div className="p-3 bg-red-50 text-red-500 text-xs rounded border border-red-100">{error}</div>}
+                            {isRegistering && <input type="text" placeholder="Full Name" className="w-full p-3 border rounded-xl bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none" onChange={e => setFullName(e.target.value)} required />}
+                            <input type="email" placeholder="Email" className="w-full p-3 border rounded-xl bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none" onChange={e => setEmail(e.target.value)} required />
+                            <input type="password" placeholder="Password" className="w-full p-3 border rounded-xl bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none" onChange={e => setPassword(e.target.value)} required />
                             <button className="w-full bg-[#005EB8] text-white py-3.5 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg">
-                                {loading ? <Icon name="loader" className="animate-spin" /> : (isRegistering ? "Register Account" : "Sign In")}
+                                {loading ? <Icon name="loader" className="animate-spin mx-auto" /> : (isRegistering ? "Register Account" : "Sign In")}
                             </button>
                         </form>
-                        <button onClick={() => setIsRegistering(!isRegistering)} className="w-full mt-6 text-sm text-blue-600 font-medium">
+                        <button onClick={() => setIsRegistering(!isRegistering)} className="w-full mt-6 text-sm text-blue-600 font-medium hover:underline">
                             {isRegistering ? "Back to Login" : "Need an account? Register"}
                         </button>
                     </div>
@@ -233,7 +272,7 @@
                             <div className="bg-gray-50 p-4 border-b font-bold text-gray-700">{cat.title}</div>
                             <div className="divide-y">
                                 {cat.items.map((item, i) => (
-                                    <div key={i} className="p-5 flex flex-col md:flex-row justify-between gap-6">
+                                    <div key={i} className="p-5 flex flex-col md:flex-row justify-between gap-6 hover:bg-gray-50/50 transition-colors">
                                         <div className="flex-1">
                                             <p className="text-sm font-medium text-gray-800">{item}</p>
                                             {progress[`${cat.id}_${i}`]?.signedOff && (
@@ -245,16 +284,16 @@
                                         <div className="flex flex-wrap items-center gap-4">
                                             <div className="flex flex-col">
                                                 <label className="text-[10px] uppercase font-bold text-gray-400">Self</label>
-                                                <select className="border rounded-lg p-1 text-xs bg-gray-50" 
+                                                <select className="border rounded-lg p-1 text-xs bg-gray-50 focus:ring-1 focus:ring-blue-500" 
                                                         value={progress[`${cat.id}_${i}`]?.selfScore || 0}
                                                         onChange={e => updateScore(cat.id, i, 'selfScore', e.target.value)}
                                                         disabled={progress[`${cat.id}_${i}`]?.signedOff}>
-                                                    {SCORING_SYSTEM.map(s => <option key={s.score} value={s.score}>{s.score} - {s.label}</option>)}
+                                                    {SCORING_SYSTEM_DESC.map(s => <option key={s.score} value={s.score}>{s.score} - {s.label}</option>)}
                                                 </select>
                                             </div>
                                             {isMentor && (
                                                 <button onClick={() => toggleSignOff(cat.id, i)} 
-                                                        className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${progress[`${cat.id}_${i}`]?.signedOff ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-green-600 text-white shadow-md'}`}>
+                                                        className={`px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-sm ${progress[`${cat.id}_${i}`]?.signedOff ? 'bg-red-50 text-red-600 border border-red-100 hover:bg-red-100' : 'bg-green-600 text-white hover:bg-green-700'}`}>
                                                     {progress[`${cat.id}_${i}`]?.signedOff ? 'Revoke' : 'Sign Off'}
                                                 </button>
                                             )}
@@ -318,8 +357,8 @@
             return (
                 <div className="min-h-screen flex flex-col">
                     <header className="bg-white border-b p-4 flex justify-between items-center sticky top-0 z-30 shadow-sm backdrop-blur-md bg-white/90">
-                        <div className="flex items-center gap-3 cursor-pointer" onClick={() => { setView('dashboard'); setSelectedTrainee(null); }}>
-                            <div className="bg-[#005EB8] text-white p-1 rounded font-bold text-xs px-2 shadow-sm">NHS</div>
+                        <div className="flex items-center gap-3 cursor-pointer group" onClick={() => { setView('dashboard'); setSelectedTrainee(null); }}>
+                            <div className="bg-[#005EB8] text-white p-1 rounded font-bold text-xs px-2 shadow-md group-hover:scale-110 transition-transform">NHS</div>
                             <span className="font-bold text-gray-800">Frimley Health</span>
                         </div>
                         <div className="flex items-center gap-6">
@@ -333,10 +372,10 @@
                     
                     <main className="max-w-7xl mx-auto p-6 flex-1 w-full">
                         {view === 'dashboard' && (
-                            <div className="space-y-8">
+                            <div className="space-y-8 animate-fadeIn">
                                 <div className="bg-gradient-to-br from-[#005EB8] to-[#002855] p-10 rounded-3xl text-white shadow-xl">
                                     <h2 className="text-4xl font-bold mb-3">Welcome, {user.name.split(' ')[0]}</h2>
-                                    <p className="text-blue-100 text-lg opacity-90">Ready to continue your GI clinical training?</p>
+                                    <p className="text-blue-100 text-lg opacity-90">Access your GI clinical training and track practical sign-offs.</p>
                                 </div>
                                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                                     <button onClick={() => setView('learning')} className="bg-white p-8 rounded-3xl shadow-sm border hover:border-blue-500 hover:shadow-xl transition-all text-left group">
@@ -344,22 +383,22 @@
                                             <Icon name="book-open" size={28} />
                                         </div>
                                         <h3 className="text-xl font-bold mb-2">Learning Hub</h3>
-                                        <p className="text-gray-500 text-sm">Review protocols, anatomy diagrams, and induction timelines.</p>
+                                        <p className="text-gray-500 text-sm">Study clinical protocols, anatomy diagrams, and pathway guidelines.</p>
                                     </button>
                                     <button onClick={() => setView('booklet')} className="bg-white p-8 rounded-3xl shadow-sm border hover:border-green-500 hover:shadow-xl transition-all text-left group">
                                         <div className="bg-green-100 w-14 h-14 rounded-2xl flex items-center justify-center text-green-600 mb-6 group-hover:bg-green-600 group-hover:text-white transition-all">
                                             <Icon name="check-circle" size={28} />
                                         </div>
                                         <h3 className="text-xl font-bold mb-2">My Booklet</h3>
-                                        <p className="text-gray-500 text-sm">Self-assess your competencies and track your practical skill sign-offs.</p>
+                                        <p className="text-gray-500 text-sm">Review your competency scores and monitor mentor sign-offs.</p>
                                     </button>
                                     {(user.role === 'mentor' || user.role === 'admin') && (
                                         <button onClick={() => setView('mentor_dash')} className="bg-white p-8 rounded-3xl shadow-sm border hover:border-purple-500 hover:shadow-xl transition-all text-left group">
                                             <div className="bg-purple-100 w-14 h-14 rounded-2xl flex items-center justify-center text-purple-600 mb-6 group-hover:bg-purple-600 group-hover:text-white transition-all">
                                                 <Icon name="users" size={28} />
                                             </div>
-                                            <h3 className="text-xl font-bold mb-2">Mentor View</h3>
-                                            <p className="text-gray-500 text-sm">Monitor trainees assigned to you and sign off their practical skills.</p>
+                                            <h3 className="text-xl font-bold mb-2">Mentor Dashboard</h3>
+                                            <p className="text-gray-500 text-sm">Manage trainees and sign off their practical endoscopy skills.</p>
                                         </button>
                                     )}
                                 </div>
