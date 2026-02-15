@@ -4,37 +4,37 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Frimley Endoscopy Portal</title>
-    <!-- Tailwind CSS for modern styling -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons for clinical UI -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- React & Babel for dynamic components -->
+    <!-- React & Babel -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- Firebase Compat SDKs (Browser-friendly global version) -->
+    <!-- Firebase Compat SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        .animate-fadeIn { animation: fadeIn 0.3s ease-in-out; }
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+        .animate-fadeIn { animation: fadeIn 0.3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .nhs-blue { background-color: #005EB8; }
+        .nhs-text { color: #005EB8; }
         details summary::-webkit-details-marker { display: none; }
-        /* Prevent layout shift during icon load */
-        .lucide { vertical-align: middle; display: inline-block; }
+        .prose ul { list-style-type: disc; padding-left: 1.5em; margin-top: 0.5em; margin-bottom: 0.5em; }
+        .prose li { margin-bottom: 0.25rem; }
     </style>
 </head>
 <body class="bg-gray-50/50">
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useRef, useMemo } = React;
+        const { useState, useEffect, useRef } = React;
 
-        // --- FIREBASE CONFIGURATION ---
+        // --- 1. PASTE YOUR CONFIG HERE ---
         const firebaseConfig = {
-            apiKey: "AIzaSyCjK9VK43HIhf_7D6wZ0DubE869A7eFDP0",
+            apiKey: "AIzaSyCU1q6ouoKGxLnlfnJpqLHiowPJN1aroQ8",
             authDomain: "gi-learning-e-booklet-24602.firebaseapp.com",
             projectId: "gi-learning-e-booklet-24602",
             storageBucket: "gi-learning-e-booklet-24602.firebasestorage.app",
@@ -42,8 +42,9 @@
             appId: "1:1083262909148:web:268cea49173834cb1f1219",
             measurementId: "G-ZV9YB3LQ3B"
         };
+        // --- END CONFIGURATION ---
 
-        // Initialize Firebase using the global 'firebase' object provided by compat scripts
+        // Initialize Firebase
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         }
@@ -53,17 +54,32 @@
 
         // --- COMPONENTS ---
         const Icon = ({ name, size = 20, className = "" }) => {
-            useEffect(() => { 
-                if (window.lucide) window.lucide.createIcons(); 
-            }, [name]);
-            return <i data-lucide={name} style={{ width: size, height: size }} className={`${className}`}></i>;
+            const paths = {
+                activity: "M22 12h-4l-3 9L9 3l-3 9H2",
+                book: "M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20M4 19.5V5A2.5 2.5 0 0 1 6.5 2.5H20v14.5H6.5a2.5 2.5 0 0 0-2.5 2.5z",
+                users: "M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm14 14v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75",
+                user: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8z",
+                "log-out": "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9",
+                "chevron-left": "M15 18l-6-6 6-6",
+                "check-circle": "M22 11.08V12a10 10 0 1 1-5.93-9.14M22 4L12 14.01l-3-3",
+                "alert-triangle": "M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01",
+                "book-open": "M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z",
+                "award": "M12 15l-2 5L9 9l11 4-5 2zm0 0l2 5 1-11-11 4 5 2z",
+                "clipboard-check": "M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2M9 2h6M9 12l2 2 4-4",
+                "stethoscope": "M4.8 2.3c-.3 0-.6.1-.8.4-.5.5-.5 1.4 0 1.9l4.5 4.5c.9.9 2.4.9 3.3 0l.5-.5m-7.5-6.3L4 2.3m13.2 10.3c2.4.5 4.3 2.4 4.8 4.8M3.5 15.5c.5-2.4 2.4-4.3 4.8-4.8M12 12v10M8 22h8",
+                "microscope": "M6 18h8M3 22h14m-8-4V8m0 0a4 4 0 1 1 8 0v10m-8-10l-4-4M12 12h2",
+                "loader": "M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83",
+                "info": "M12 16v-4M12 8h.01M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0z",
+                "settings": "M12.22 2h-0.44a2 2 0 0 0-2 2v0.18a2 2 0 0 1-1 1.73l-0.43 0.25a2 2 0 0 1-2 0l-0.15-0.08a2 2 0 0 0-2.73 0.73l-0.22 0.38a2 2 0 0 0 0.73 2.73l0.15 0.1a2 2 0 0 1 1 1.72v0.51a2 2 0 0 1-1 1.74l-0.15 0.09a2 2 0 0 0-0.73 2.73l0.22 0.38a2 2 0 0 0 2.73 0.73l0.15-0.08a2 2 0 0 1 2 0l0.43 0.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h0.44a2 2 0 0 0 2-2v-0.18a2 2 0 0 1 1-1.73l0.43-0.25a2 2 0 0 1 2 0l0.15 0.08a2 2 0 0 0 2.73-0.73l0.22-0.38a2 2 0 0 0-0.73-2.73l-0.15-0.1a2 2 0 0 1-1-1.72v-0.51a2 2 0 0 1 1-1.74l0.15-0.09a2 2 0 0 0 0.73-2.73l-0.22-0.38a2 2 0 0 0-2.73-0.73l-0.15 0.08a2 2 0 0 1-2 0l-0.43-0.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",
+                "trash": "M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+            };
+            return (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                    <path d={paths[name] || ""} />
+                    {name === 'loader' && <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite" />}
+                </svg>
+            );
         };
-
-        const ProgressBar = ({ progress }) => (
-            <div className="w-full bg-gray-200 rounded-full h-2 mt-2 overflow-hidden">
-                <div className="bg-[#005EB8] h-full transition-all duration-500" style={{ width: `${progress || 0}%` }}></div>
-            </div>
-        );
 
         // --- DIAGRAMS ---
         const StomachDiagram = () => (
@@ -105,7 +121,8 @@
                     <path d="M160 180 L 160 210" stroke="#15803d" strokeWidth="25" fill="none" strokeLinecap="round"/>
                     <text x="30" y="120" fontSize="11" fill="#14532d" fontWeight="bold">Ascending</text>
                     <text x="160" y="40" fontSize="11" fill="#14532d" fontWeight="bold" textAnchor="middle">Transverse</text>
-                    <text x="260" y="230" fontSize="11" fill="#14532d" fontWeight="bold">Sigmoid</text>
+                    <text x="310" y="110" fontSize="11" fill="#14532d" fontWeight="bold" textAnchor="middle" transform="rotate(90, 310, 110)">Descending</text>
+                    <text x="230" y="225" fontSize="11" fill="#14532d" fontWeight="bold">Sigmoid</text>
                     <text x="120" y="200" fontSize="11" fill="#14532d" fontWeight="bold">Rectum</text>
                     <circle cx="60" cy="180" r="8" fill="#15803d" stroke="white" strokeWidth="2"/>
                     <text x="20" y="195" fontSize="11" fill="#14532d" fontWeight="bold">Caecum</text>
@@ -133,35 +150,331 @@
             </div>
         );
 
-        // --- DATA ---
+        // --- FULL LEARNING CONTENT ---
         const LEARNING_MODULES = [
-            { id: 'intro', title: 'Introduction', icon: 'briefcase', sections: [{ title: 'Welcome', content: <div>Welcome to Frimley Health. This booklet covers the competencies required for the GI Unit.</div> }] },
-            { id: 'sec_a', title: 'Section A: Pathway', icon: 'clipboard-check', sections: [{ title: 'Admission', content: <div>Check ID, NBM status (6hrs food, 2hrs clear fluids), and Escort availability.</div> }] },
-            { id: 'sec_b', title: 'Section B: Procedures', icon: 'activity', sections: [{ title: 'OGD & Colonoscopy', content: <div>Covers diagnostic and therapeutic basics for upper and lower GI procedures.</div> }] },
-            { id: 'sec_c', title: 'Section C: Upper GI', icon: 'stethoscope', sections: [{ title: 'Gastric Anatomy', content: <StomachDiagram /> }] },
-            { id: 'sec_d', title: 'Section D: Lower GI', icon: 'microscope', sections: [{ title: 'Pathology', content: <><ColonDiagram /><PolypDiagram /></> }] },
-            { id: 'sec_e', title: 'Section E: Induction', icon: 'graduation-cap', sections: [{ title: 'Induction', content: <div>A structured 12-week programme across Recovery, Room, and Cleaning areas.</div> }] },
-            { id: 'sec_f', title: 'Section F: Advanced', icon: 'award', sections: [{ title: 'Advanced Roles', content: <div>Obtaining Consent and managing conscious sedation.</div> }] }
+            {
+                id: 'intro',
+                title: 'Introduction & Induction',
+                icon: 'briefcase',
+                sections: [
+                    {
+                        title: 'Welcome & Core Values',
+                        content: (
+                            <div className="space-y-4">
+                                <div className="bg-gradient-to-r from-[#005EB8] to-[#003087] p-6 rounded-xl text-white shadow-lg">
+                                    <h3 className="text-2xl font-bold mb-2">Frimley Health Endoscopy Unit</h3>
+                                    <p className="opacity-90">Version 2.3 - Learning Booklet</p>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 text-sm text-center">
+                                        <div className="bg-white/10 p-2 rounded border border-white/20">Committed To Excellence</div>
+                                        <div className="bg-white/10 p-2 rounded border border-white/20">Working Together</div>
+                                        <div className="bg-white/10 p-2 rounded border border-white/20">Facing The Future</div>
+                                    </div>
+                                </div>
+                                <p>This digital booklet tracks the competencies required to work safely and effectively within the GI Unit. It is adapted from the Trust's official learning pack.</p>
+                            </div>
+                        )
+                    }
+                ]
+            },
+            {
+                id: 'sec_a',
+                title: 'Section A: Patient Pathway',
+                icon: 'clipboard-check',
+                sections: [
+                    {
+                        title: '1. Admission & Assessment',
+                        content: (
+                            <div className="grid grid-cols-1 gap-4">
+                                <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                                    <h4>Identity & Status Checks</h4>
+                                    <ul>
+                                        <li>Check Name, Address, DOB, and Hospital No. against wristband.</li>
+                                        <li><strong>NBM Status:</strong> 6 hours food, 2 hours clear fluid.</li>
+                                        <li><strong>Allergies:</strong> Check for red band/alerts (Latex, Antibiotics).</li>
+                                        <li><strong>Diabetics:</strong> Check BSL on arrival. Note insulin regimen.</li>
+                                        <li><strong>Anticoagulants:</strong> Check INR (&lt; 1.5 usually) and if meds stopped 14 days prior.</li>
+                                    </ul>
+                                </div>
+                                <div className="bg-red-50 p-4 rounded-lg border border-red-100">
+                                    <h4 className="text-red-700 flex items-center gap-2"><Icon name="alert-triangle" size={16}/> The Escort Rule</h4>
+                                    <p><strong>CRITICAL:</strong> Patient MUST have a responsible adult to take them home and stay for 12-24 hours if sedated. If NO escort is available → <strong>NO SEDATION</strong> (Entonox/Spray only).</p>
+                                </div>
+                            </div>
+                        )
+                    },
+                    {
+                        title: '2 & 3. Recovery & Discharge',
+                        content: (
+                            <div className="space-y-4">
+                                <div className="bg-white p-4 border rounded-lg shadow-sm">
+                                    <h4>Recovery Process</h4>
+                                    <ul>
+                                        <li>Handover from endoscopy nurse (drugs given, procedure details).</li>
+                                        <li>Monitor observations (BP, Pulse, O2) and record on Epic.</li>
+                                        <li>Contact Next of Kin with realistic collection time.</li>
+                                        <li>Remove cannula only when observations are stable (unless for CT scan).</li>
+                                    </ul>
+                                </div>
+                                <div className="bg-white p-4 border rounded-lg shadow-sm">
+                                    <h4>Discharge Protocol</h4>
+                                    <ul>
+                                        <li>Explain report findings (Polyps, biopsies taken).</li>
+                                        <li>Give advice leaflets (e.g., "After your Gastroscopy").</li>
+                                        <li><strong>Safety Advice:</strong> No driving, machinery, or signing legal documents for 24 hours if sedated.</li>
+                                        <li>Print 3 copies of report: Patient, GP, Histology.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        )
+                    },
+                    {
+                        title: '4 & 5. Room & Equipment Prep',
+                        content: (
+                            <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 text-sm">
+                                <h4>Drug Trolley</h4>
+                                <ul>
+                                    <li>Syringes (5ml, 10ml, 20ml), Needles (Green/Blue), Cannulae.</li>
+                                    <li><strong>Sedation:</strong> Midazolam, Fentanyl.</li>
+                                    <li><strong>Reversal:</strong> Flumazenil (Anexate), Naloxone (Narcan).</li>
+                                    <li><strong>Antispasmodic:</strong> Buscopan (Hyoscine).</li>
+                                </ul>
+                                <h4>Stack & Scope</h4>
+                                <ul>
+                                    <li><strong>Leak Test:</strong> Must be performed prior to use.</li>
+                                    <li><strong>Valves:</strong> Attach Air/Water & Suction valves.</li>
+                                    <li><strong>White Balance:</strong> Essential for correct colour representation.</li>
+                                </ul>
+                            </div>
+                        )
+                    },
+                    {
+                        title: 'Therapeutic Setup Lists',
+                        content: (
+                            <div className="grid md:grid-cols-2 gap-4 text-sm">
+                                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded">
+                                    <strong>Upper GI Bleed Kit</strong>
+                                    <ul>
+                                        <li>Adrenaline (1:10,000)</li>
+                                        <li>Gold Probe (Heater)</li>
+                                        <li>Banding Kit (Varices)</li>
+                                        <li>Sengstaken Tube</li>
+                                    </ul>
+                                </div>
+                                <div className="p-3 bg-purple-50 border border-purple-200 rounded">
+                                    <strong>ERCP Trolley</strong>
+                                    <ul>
+                                        <li>Side-viewing Duodenoscope</li>
+                                        <li>Cannulae & Guide wires</li>
+                                        <li>Sphincterotomes & Balloons</li>
+                                        <li>Stents (Plastic/Metal)</li>
+                                    </ul>
+                                </div>
+                                <div className="p-3 bg-green-50 border border-green-200 rounded">
+                                    <strong>Lower GI Therapy</strong>
+                                    <ul>
+                                        <li>Injection Needle</li>
+                                        <li>Snares (various sizes)</li>
+                                        <li>Clips (Haemostasis)</li>
+                                        <li>Tattooing Ink</li>
+                                    </ul>
+                                </div>
+                                <div className="p-3 bg-gray-50 border border-gray-200 rounded">
+                                    <strong>PEG Insertion</strong>
+                                    <ul>
+                                        <li>16 Fr PEG Kit</li>
+                                        <li>Sterile Gloves & Towel</li>
+                                        <li>Chloraprep/Betadine</li>
+                                        <li>Lignocaine 1%</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        )
+                    }
+                ]
+            },
+            {
+                id: 'sec_b',
+                title: 'Section B: Procedures',
+                icon: 'activity',
+                sections: [
+                    {
+                        title: 'Diagnostic Procedures',
+                        content: (
+                            <div className="space-y-4">
+                                <div className="border rounded-lg p-4 bg-blue-50/30">
+                                    <h4>Gastroscopy (OGD)</h4>
+                                    <p><strong>Scope:</strong> Gastroscope (Forward viewing).</p>
+                                    <p><strong>Indications:</strong> Anaemia, Haematemesis, Dysphagia, Persistent dyspepsia (>45yrs).</p>
+                                </div>
+                                <div className="border rounded-lg p-4 bg-green-50/30">
+                                    <h4>Colonoscopy</h4>
+                                    <p><strong>Scope:</strong> Colonoscope (Longer, variable stiffness).</p>
+                                    <p><strong>Indications:</strong> Rectal bleeding, Altered bowel habit, IBD.</p>
+                                </div>
+                                <div className="border rounded-lg p-4 bg-purple-50/30">
+                                    <h4>ERCP</h4>
+                                    <p><strong>Scope:</strong> Duodenoscope (Side viewing + Elevator).</p>
+                                    <p><strong>Purpose:</strong> Biliary/pancreatic ducts (Stones, Strictures).</p>
+                                </div>
+                            </div>
+                        )
+                    }
+                ]
+            },
+            {
+                id: 'sec_c',
+                title: 'Section C: Upper GI Conditions',
+                icon: 'stethoscope',
+                sections: [
+                    {
+                        title: 'Anatomy & Pathology',
+                        content: (
+                            <div className="space-y-4">
+                                <StomachDiagram />
+                                <div className="space-y-2">
+                                    <details className="bg-white border rounded p-2"><summary className="font-bold cursor-pointer">Oesophagitis (GORD)</summary><p className="text-sm mt-2 pl-4">Inflammation from reflux. Los Angeles Classification used (Grade A-D).</p></details>
+                                    <details className="bg-white border rounded p-2"><summary className="font-bold cursor-pointer">Barrett's Oesophagus</summary><p className="text-sm mt-2 pl-4">Premalignant. Normal squamous epithelium replaced by columnar (salmon-pink).</p></details>
+                                    <details className="bg-white border rounded p-2"><summary className="font-bold cursor-pointer">Hiatus Hernia</summary><p className="text-sm mt-2 pl-4">Type I (Sliding) vs Type II (Rolling). Protrusion of stomach into thorax.</p></details>
+                                    <details className="bg-white border rounded p-2"><summary className="font-bold cursor-pointer">Oesophageal Varices</summary><p className="text-sm mt-2 pl-4">Dilated veins (Portal HTN). Risk of massive bleed. Treated with Band Ligation.</p></details>
+                                    <details className="bg-white border rounded p-2"><summary className="font-bold cursor-pointer">Peptic Ulcer Disease</summary><p className="text-sm mt-2 pl-4">Gastric/Duodenal ulcers. Causes: H. Pylori, NSAIDs. Gastric ulcers must be biopsied.</p></details>
+                                    <details className="bg-white border rounded p-2"><summary className="font-bold cursor-pointer">H. Pylori</summary><p className="text-sm mt-2 pl-4">Gram-negative bacteria. Diagnosed via CLO test (biopsy) or breath test. Treated with Triple Therapy.</p></details>
+                                    <details className="bg-white border rounded p-2"><summary className="font-bold cursor-pointer">Achalasia</summary><p className="text-sm mt-2 pl-4">LES fails to relax. 'Bird's Beak' sign. Treated with Botox/Dilatation.</p></details>
+                                </div>
+                            </div>
+                        )
+                    }
+                ]
+            },
+            {
+                id: 'sec_d',
+                title: 'Section D: Lower GI Conditions',
+                icon: 'microscope',
+                sections: [
+                    {
+                        title: 'Anatomy & Pathology',
+                        content: (
+                            <div className="space-y-4">
+                                <ColonDiagram />
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="p-3 bg-white border rounded shadow-sm"><strong className="block text-sm text-[#005EB8]">Haemorrhoids</strong><p className="text-xs text-gray-600">Vascular cushions. Internal (bleed) or External (painful). Banding/Injection.</p></div>
+                                    <div className="p-3 bg-white border rounded shadow-sm"><strong className="block text-sm text-[#005EB8]">Proctitis</strong><p className="text-xs text-gray-600">Inflammation of rectum (STI/IBD/Radiation).</p></div>
+                                    <div className="p-3 bg-white border rounded shadow-sm"><strong className="block text-sm text-[#005EB8]">Diverticular Disease</strong><p className="text-xs text-gray-600">Pouches in colon. Diverticulitis = Infection (LLQ Pain).</p></div>
+                                    <div className="p-3 bg-white border rounded shadow-sm"><strong className="block text-sm text-[#005EB8]">IBS</strong><p className="text-xs text-gray-600">Functional disorder. Pain/Bloating/Habit change.</p></div>
+                                    <div className="p-3 bg-white border rounded shadow-sm"><strong className="block text-sm text-[#005EB8]">Polyps</strong><p className="text-xs text-gray-600">Hyperplastic (benign) vs Adenomatous (pre-cancerous).</p></div>
+                                    <div className="p-3 bg-white border rounded shadow-sm"><strong className="block text-sm text-[#005EB8]">Tapeworm</strong><p className="text-xs text-gray-600">Parasitic infection. Treated with Praziquantel.</p></div>
+                                </div>
+                                <div className="overflow-hidden border rounded-lg shadow-sm mt-4">
+                                    <table className="w-full text-xs">
+                                        <thead className="bg-gray-100"><tr><th className="p-2">Feature</th><th className="p-2">Ulcerative Colitis (UC)</th><th className="p-2">Crohn's Disease</th></tr></thead>
+                                        <tbody>
+                                            <tr><td className="p-2 font-bold">Location</td><td className="p-2">Colon only (starts Rectum)</td><td className="p-2">Anywhere (Mouth-Anus)</td></tr>
+                                            <tr><td className="p-2 font-bold">Pattern</td><td className="p-2">Continuous</td><td className="p-2">Patchy ("Skip Lesions")</td></tr>
+                                            <tr><td className="p-2 font-bold">Depth</td><td className="p-2">Mucosa (Superficial)</td><td className="p-2">Transmural (Deep)</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div className="bg-pink-50 p-4 rounded-xl border border-pink-200 mt-4">
+                                    <h4 className="font-bold text-pink-800 mb-2">Polyp Morphology</h4>
+                                    <PolypDiagram />
+                                </div>
+                            </div>
+                        )
+                    }
+                ]
+            },
+            {
+                id: 'sec_e',
+                title: 'Section E: Induction Programme',
+                icon: 'graduation-cap',
+                sections: [
+                    {
+                        title: 'The First 12 Weeks',
+                        content: (
+                            <div className="overflow-hidden border rounded-lg shadow-sm">
+                                <table className="w-full text-sm">
+                                    <thead className="bg-gray-100 border-b">
+                                        <tr><th className="p-2 text-left">Week</th><th className="p-2 text-left">Focus</th></tr>
+                                    </thead>
+                                    <tbody className="divide-y">
+                                        <tr><td className="p-2 font-bold text-[#005EB8]">Week 1</td><td className="p-2">Recovery: Booking in, Obs, Discharge.</td></tr>
+                                        <tr><td className="p-2 font-bold text-[#005EB8]">Week 2-4</td><td className="p-2">Endoscopy Room: "Head end" nurse, Airway.</td></tr>
+                                        <tr><td className="p-2 font-bold text-[#005EB8]">Week 4-6</td><td className="p-2">Cleaning: Manual clean, AER use, Traceability.</td></tr>
+                                        <tr><td className="p-2 font-bold text-[#005EB8]">Week 6-12</td><td className="p-2">Advanced: Consent, Technical assistance.</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        )
+                    }
+                ]
+            },
+            {
+                id: 'sec_f',
+                title: 'Section F: Advanced Practice',
+                icon: 'award',
+                sections: [
+                    {
+                        title: 'Expanded Roles',
+                        content: (
+                            <div className="space-y-4">
+                                <div className="bg-indigo-50 p-4 rounded border border-indigo-100">
+                                    <h4>Obtaining Consent</h4>
+                                    <p className="text-sm text-gray-700">Valid only if trained. Must explain risks (Perf/Bleed) and benefits. Voluntary, Informed, Capacity.</p>
+                                </div>
+                                <div className="bg-indigo-50 p-4 rounded border border-indigo-100">
+                                    <h4>IV Sedation</h4>
+                                    <p className="text-sm text-gray-700">Cannulation (ANTT). Monitoring (Pulse Ox/BP every 5 mins). Knowledge of reversals.</p>
+                                </div>
+                            </div>
+                        )
+                    }
+                ]
+            }
         ];
 
+        // --- FULL COMPETENCY LIST (16 CATEGORIES) ---
         const CATEGORIES = [
-            { id: 'prof', title: '1. Professional Values', items: ["Promotes positive nursing image.", "Respects patient dignity.", "Maintains confidentiality.", "Reliable and punctual."] },
-            { id: 'comm', title: '2. Communication & Assessment', items: ["Obtains full nursing history.", "Pre-assesses for sedation.", "Documentation is up-to-date."] },
-            { id: 'upper', title: '3. Upper GI Skills', items: ["Biopsy/CLO test.", "Variceal banding setup.", "Heater probe therapy."] },
-            { id: 'lower', title: '4. Lower GI Skills', items: ["Polypectomy assistance.", "Tattooing technique.", "Scope Guide setup."] },
-            { id: 'ercp', title: '5. ERCP Skills', items: ["Injection of dye.", "Sphincterotomy control.", "Stenting assistance."] },
-            { id: 'ic', title: '6. Infection Control', items: ["Hand hygiene standards.", "PPE risk assessment.", "Decontamination processes."] }
+            { id: 'prof_values', title: '1. Professional Values & Interpersonal Effectiveness', items: ["Presents self professionally.", "Respects patient dignity/privacy.", "Safeguards confidentiality.", "Co-operates with MDT.", "Reliable and punctual."] },
+            { id: 'comm_assessment', title: '2. Communication & Patient Assessment', items: ["Obtains full nursing history.", "Pre-assess for procedure/sedation.", "Effective phone skills.", "Documentation up-to-date.", "Prioritises in-patients."] },
+            { id: 'upper_gi', title: '3. Upper GI Endoscopy', items: ["Discuss diagnostic OGD risks.", "Discuss therapeutic OGD risks.", "Explain procedure to patient.", "Choices of sedation/spray.", "Advice for diabetics/anticoagulants.", "Assisting endoscopist.", "Post-procedure monitoring."] },
+            { id: 'skills_upper', title: '4. Skills: Upper GI', items: ["Biopsy / CLO test.", "Injection therapy.", "Varices ligation.", "Heater probe.", "Clipping.", "Dilatation (Balloon/Bougie).", "PEG insertion assist."] },
+            { id: 'lower_gi', title: '5. Lower GI Endoscopy', items: ["Discuss Colonoscopy/Flexi risks.", "Explain bowel prep.", "Assisting endoscopist.", "Positioning (Left Lateral).", "Abdominal pressure techniques."] },
+            { id: 'skills_lower', title: '6. Skills: Lower GI', items: ["Snare Polypectomy.", "Polyp retrieval (Trap/Net).", "Injection/Heater/Clips.", "Tattooing.", "Scope Guide setup."] },
+            { id: 'ercp', title: '7. ERCP', items: ["Discuss ERCP risks (Pancreatitis).", "High-risk consent.", "Positioning (Prone/Sem-prone).", "Monitor for sepsis."] },
+            { id: 'skills_ercp', title: '8. Skills: ERCP', items: ["Dye injection.", "Sphincterotome control.", "Stone extraction (Basket/Balloon).", "Stent insertion (Plastic/Metal).", "Lithotripsy."] },
+            { id: 'peg', title: '9. PEG & Enteral Feeding', items: ["Indications/Risks for PEG.", "Assist PEG insertion.", "Post-procedure care (site check).", "Change Y-adaptors/Balloon tubes."] },
+            { id: 'infection_control', title: '10. Infection Control', items: ["Handwashing/Gel.", "PPE usage.", "Spalding classification.", "Decontamination process.", "Traceability."] },
+            { id: 'equipment', title: '11. Equipment Design', items: ["Scope channels (Air/Water/Biopsy).", "Valves maintenance.", "White balance.", "Troubleshooting image failure."] },
+            { id: 'cleaning', title: '12. Cleaning & Decontamination', items: ["Leak testing.", "Manual cleaning (Brush/Flush).", "AER (Washer) loading.", "Traceability logs.", "Chemical spill safety."] },
+            { id: 'equip_training', title: '13. Equipment Checklist', items: ["Endoscopes", "Light Source", "Diathermy (ERBE)", "Argon Beamer", "Heat Probe", "Scope Guide", "Leak Tester", "AER", "Drying Cabinet", "Pulse Ox", "Defib"] },
+            { id: 'consent', title: '14. Consent (Advanced)', items: ["Knowledge of policy.", "Obtaining informed consent.", "Checking capacity.", "Explaining risks accurately."] },
+            { id: 'admit_discharge', title: '15. Admission & Discharge (Advanced)', items: ["Complete admission docs.", "Verify NBM/Bowel Prep.", "Manage diabetic/anticoagulant plans.", "Post-proc recovery obs.", "Assess discharge readiness (Aldrete).", "Written instructions.", "Ensure escort."] },
+            { id: 'iv_access', title: '16. IV Access & Sedation', items: ["Cannulation (ANTT).", "Administering sedation.", "Monitoring depth of sedation.", "Airway management.", "Reversal agents."] }
         ];
 
         const SCORING_SYSTEM_DESC = [
-            { score: 0, label: "Unsafe", desc: "Cannot perform activity safely.", color: "bg-red-100 text-red-800 border-red-200" },
-            { score: 1, label: "Constant Supervision", desc: "Requires constant supervision.", color: "bg-orange-100 text-orange-800 border-orange-200" },
-            { score: 2, label: "Some Supervision", desc: "Satisfactory but requires assistance.", color: "bg-yellow-100 text-yellow-800 border-yellow-200" },
-            { score: 3, label: "Competent", desc: "Satisfactory without supervision.", color: "bg-green-100 text-green-800 border-green-200" },
-            { score: 4, label: "Proficient", desc: "Acceptable speed/quality without supervision.", color: "bg-blue-100 text-blue-800 border-blue-200" },
-            { score: 5, label: "Advanced", desc: "Uses initiative, adapts to problems.", color: "bg-indigo-100 text-indigo-800 border-indigo-200" },
-            { score: 6, label: "Expert", desc: "Expert quality, demonstrates to others.", color: "bg-purple-100 text-purple-800 border-purple-200" }
+            { score: 0, label: "Unsafe", color: "bg-red-100 text-red-800 border-red-200" }, 
+            { score: 1, label: "Constant Supervision", color: "bg-orange-100 text-orange-800 border-orange-200" }, 
+            { score: 2, label: "Some Supervision", color: "bg-yellow-100 text-yellow-800 border-yellow-200" }, 
+            { score: 3, label: "Competent", color: "bg-green-100 text-green-800 border-green-200" }, 
+            { score: 4, label: "Proficient", color: "bg-blue-100 text-blue-800 border-blue-200" }, 
+            { score: 5, label: "Advanced", color: "bg-indigo-100 text-indigo-800 border-indigo-200" }, 
+            { score: 6, label: "Expert", color: "bg-purple-100 text-purple-800 border-purple-200" }
         ];
+
+        const ScoringLegend = () => (
+            <div className="bg-white p-4 rounded-2xl border shadow-sm mb-6">
+                <h4 className="font-bold text-gray-800 mb-3 flex items-center gap-2 text-sm">
+                    <Icon name="activity" className="text-[#005EB8]" /> Benner Scoring System (0-6)
+                </h4>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                    {SCORING_SYSTEM_DESC.map((s) => (
+                        <div key={s.score} className={`p-2 rounded border text-[10px] ${s.color}`}>
+                            <span className="font-bold mr-1">{s.score}</span> {s.label}
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
 
         // --- AUTH & CORE UI ---
         const AuthScreen = () => {
@@ -171,17 +484,18 @@
             const [fullName, setFullName] = useState('');
             const [error, setError] = useState('');
             const [loading, setLoading] = useState(false);
-            const [showHelp, setShowHelp] = useState(false);
+            const [apiBlockError, setApiBlockError] = useState(false);
+            const [errorType, setErrorType] = useState(null);
 
             const handleAuth = async (e) => {
                 e.preventDefault();
                 setError('');
+                setApiBlockError(false);
                 setLoading(true);
                 try {
                     if (isRegistering) {
                         const cred = await auth.createUserWithEmailAndPassword(email, password);
                         await cred.user.updateProfile({ displayName: fullName });
-                        // Set profile doc and wait for it
                         await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('app_users').doc(cred.user.uid).set({
                             username: email, name: fullName, role: 'trainee', createdAt: new Date().toISOString()
                         });
@@ -189,43 +503,44 @@
                         await auth.signInWithEmailAndPassword(email, password);
                     }
                 } catch (err) {
-                    if (err.code === 'auth/operation-not-allowed') setShowHelp(true);
+                    if (err.message.includes("referer") || err.code === "auth/unauthorized-domain") {
+                         setErrorType('referer');
+                         setApiBlockError(true);
+                    } else if (err.message.includes("identitytoolkit") || err.message.includes("blocked") || err.code === 'auth/configuration-not-found' || err.code === 'auth/operation-not-allowed') {
+                         setErrorType('identity');
+                         setApiBlockError(true);
+                    }
                     setError(err.message);
-                }
-                finally { setLoading(false); }
+                } finally { setLoading(false); }
             };
 
             return (
-                <div className="min-h-screen flex items-center justify-center p-4 bg-gray-100">
-                    {showHelp && (
-                        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
-                            <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-md w-full border-t-8 border-red-500">
-                                <div className="text-center mb-6">
-                                    <Icon name="settings" size={32} className="text-red-500 mb-2"/>
-                                    <h2 className="text-xl font-bold">Email Auth Not Enabled</h2>
-                                    <p className="text-sm text-gray-600">You must enable the <b>Email/Password</b> sign-in method in your Firebase Console.</p>
-                                </div>
-                                <button onClick={() => setShowHelp(false)} className="w-full bg-blue-600 text-white py-2 rounded-lg font-bold">Dismiss</button>
-                            </div>
+                <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gray-100">
+                    {/* Error Popups */}
+                    {apiBlockError && (
+                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
+                             <div className="bg-white p-6 rounded-2xl shadow-2xl max-w-lg w-full border-t-8 border-red-500">
+                                <h2 className="text-xl font-bold text-red-600 flex items-center gap-2"><Icon name="alert-triangle" /> Configuration Error</h2>
+                                <p className="mt-2 text-sm text-gray-600">
+                                    {errorType === 'referer' ? "Your API Key has domain restrictions preventing this URL." : "Email Sign-in is not enabled in your Firebase Console."}
+                                </p>
+                                <button onClick={() => setApiBlockError(false)} className="mt-4 w-full bg-blue-600 text-white py-2 rounded font-bold">Dismiss</button>
+                             </div>
                         </div>
                     )}
-                    <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full border-t-8 border-[#005EB8]">
+
+                    <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full border-t-8 border-[#005EB8] animate-fadeIn">
                         <div className="text-center mb-6">
-                            <div className="bg-[#005EB8] text-white w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-4 font-bold shadow-lg text-sm">NHS</div>
+                            <div className="bg-[#005EB8] text-white w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-4 font-bold shadow-lg">NHS</div>
                             <h1 className="text-2xl font-bold">Endoscopy Portal</h1>
-                            <p className="text-xs text-gray-400 mt-1 uppercase tracking-widest">Frimley Health Learning</p>
-                        </div>
-                        <div className="bg-amber-50 p-4 rounded-lg text-xs text-amber-800 mb-6 flex gap-3 border border-amber-100">
-                            <Icon name="alert-triangle" size={18} />
-                            <span><b>Notice:</b> This is a prototype. Do NOT use official NHS passwords. Use dummy emails (e.g. nurse1@test.com).</span>
                         </div>
                         <form onSubmit={handleAuth} className="space-y-4">
-                            {error && <div className="p-3 bg-red-50 text-red-500 text-xs rounded border border-red-100">{error}</div>}
+                            {error && <div className="p-3 bg-red-50 text-red-600 text-xs rounded border border-red-100 leading-relaxed break-words">{error}</div>}
                             {isRegistering && <input type="text" placeholder="Full Name" className="w-full p-3 border rounded-xl bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none" onChange={e => setFullName(e.target.value)} required />}
-                            <input type="email" placeholder="Email" className="w-full p-3 border rounded-xl bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none" onChange={e => setEmail(e.target.value)} required />
+                            <input type="email" placeholder="Email (use dummy e.g. nurse@test.com)" className="w-full p-3 border rounded-xl bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none" onChange={e => setEmail(e.target.value)} required />
                             <input type="password" placeholder="Password" className="w-full p-3 border rounded-xl bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none" onChange={e => setPassword(e.target.value)} required />
-                            <button className="w-full bg-[#005EB8] text-white py-3.5 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg flex items-center justify-center gap-2">
-                                {loading ? <Icon name="loader" className="animate-spin" /> : (isRegistering ? "Register Account" : "Sign In")}
+                            <button className="w-full bg-[#005EB8] text-white py-3.5 rounded-xl font-bold hover:bg-blue-700 transition-all flex items-center justify-center gap-2">
+                                {loading ? <Icon name="loader" className="animate-spin" /> : (isRegistering ? "Create Training Account" : "Sign In")}
                             </button>
                         </form>
                         <button onClick={() => setIsRegistering(!isRegistering)} className="w-full mt-6 text-sm text-blue-600 font-medium hover:underline text-center block">
@@ -242,59 +557,73 @@
 
             useEffect(() => {
                 if (!targetUser?.username) return;
-                const unsubscribe = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('competencies').doc(`${targetUser.username}_progress`)
+                const unsub = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('competencies').doc(`${targetUser.username}_progress`)
                     .onSnapshot(doc => setProgress(doc.data() || {}));
-                return () => unsubscribe();
+                return () => unsub();
             }, [targetUser]);
 
-            const updateScore = (catId, idx, type, val) => {
+            const update = (catId, idx, score) => {
                 const key = `${catId}_${idx}`;
-                const newProg = { ...progress, [key]: { ...(progress[key] || {}), [type]: val } };
+                const newProg = { ...progress, [key]: { ...(progress[key] || {}), selfScore: score } };
                 db.collection('artifacts').doc(appId).collection('public').doc('data').collection('competencies').doc(`${targetUser.username}_progress`).set(newProg);
             };
 
             const toggleSignOff = (catId, idx) => {
+                if (!isMentor) return;
                 const key = `${catId}_${idx}`;
-                const current = progress[key]?.signedOff;
-                updateScore(catId, idx, 'signedOff', !current);
-                updateScore(catId, idx, 'mentorName', !current ? (currentUser?.name || 'Mentor') : '');
+                const current = !!progress[key]?.signedOff;
+                const newProg = { ...progress, [key]: { ...(progress[key] || {}), signedOff: !current, mentorName: !current ? (currentUser?.name || 'Mentor') : '' } };
+                db.collection('artifacts').doc(appId).collection('public').doc('data').collection('competencies').doc(`${targetUser.username}_progress`).set(newProg);
             };
 
             return (
                 <div className="space-y-8 animate-fadeIn">
-                    <div className="flex items-center justify-between bg-white p-6 rounded-2xl border shadow-sm">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between bg-white p-6 rounded-2xl border shadow-sm gap-4">
                         <div className="flex items-center gap-4">
-                            <button onClick={onBack} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><Icon name="arrow-left" /></button>
+                            <button onClick={onBack} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><Icon name="chevron-left" /></button>
                             <h2 className="text-2xl font-bold">{targetUser?.name || 'User'}'s Booklet</h2>
                         </div>
+                        <div className="flex gap-2">
+                             <div className="bg-gray-100 px-3 py-1 rounded text-xs font-bold text-gray-500">
+                                {Math.round((Object.values(progress).filter(v => v.signedOff).length / 75) * 100)}% Complete
+                             </div>
+                        </div>
                     </div>
+                    
+                    <ScoringLegend />
+
                     {CATEGORIES.map(cat => (
                         <div key={cat.id} className="bg-white rounded-2xl border shadow-sm overflow-hidden">
-                            <div className="bg-gray-50 p-4 border-b font-bold text-gray-700">{cat.title}</div>
+                            <div className="bg-gray-50 p-4 font-bold text-gray-700 text-sm border-b flex justify-between items-center">
+                                {cat.title}
+                                <span className="text-xs font-normal text-gray-400">{cat.items.length} items</span>
+                            </div>
                             <div className="divide-y">
                                 {cat.items.map((item, i) => (
-                                    <div key={i} className="p-5 flex flex-col md:flex-row justify-between gap-6 hover:bg-gray-50/50 transition-colors">
+                                    <div key={i} className="p-4 flex flex-col md:flex-row justify-between gap-4 hover:bg-gray-50/50 transition-colors">
                                         <div className="flex-1">
-                                            <p className="text-sm font-medium text-gray-800">{item}</p>
+                                            <p className="text-sm font-medium text-gray-800 leading-relaxed">{item}</p>
                                             {progress[`${cat.id}_${i}`]?.signedOff && (
-                                                <span className="text-[10px] text-green-600 font-bold flex items-center gap-1 mt-1">
+                                                <span className="inline-flex items-center gap-1 mt-2 px-2 py-1 bg-green-50 text-green-700 text-[10px] font-bold rounded border border-green-100">
                                                     <Icon name="award" size={12} /> Signed off by {progress[`${cat.id}_${i}`].mentorName}
                                                 </span>
                                             )}
                                         </div>
-                                        <div className="flex flex-wrap items-center gap-4">
+                                        <div className="flex items-center gap-3 self-start md:self-center">
                                             <div className="flex flex-col">
-                                                <label className="text-[10px] uppercase font-bold text-gray-400">Self</label>
-                                                <select className="border rounded-lg p-1 text-xs bg-gray-50 focus:ring-1 focus:ring-blue-500" 
-                                                        value={progress[`${cat.id}_${i}`]?.selfScore || 0}
-                                                        onChange={e => updateScore(cat.id, i, 'selfScore', e.target.value)}
-                                                        disabled={progress[`${cat.id}_${i}`]?.signedOff}>
+                                                <label className="text-[10px] uppercase font-bold text-gray-400 mb-1">Self-Score</label>
+                                                <select 
+                                                    className="border rounded-lg p-1.5 text-xs bg-white outline-none focus:ring-2 focus:ring-blue-100"
+                                                    value={progress[`${cat.id}_${i}`]?.selfScore || 0}
+                                                    onChange={e => update(cat.id, i, e.target.value)}
+                                                    disabled={progress[`${cat.id}_${i}`]?.signedOff}
+                                                >
                                                     {SCORING_SYSTEM_DESC.map(s => <option key={s.score} value={s.score}>{s.score} - {s.label}</option>)}
                                                 </select>
                                             </div>
                                             {isMentor && (
                                                 <button onClick={() => toggleSignOff(cat.id, i)} 
-                                                        className={`px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-sm ${progress[`${cat.id}_${i}`]?.signedOff ? 'bg-red-50 text-red-600 border border-red-100 hover:bg-red-100' : 'bg-green-600 text-white hover:bg-green-700'}`}>
+                                                        className={`mt-4 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all shadow-sm ${progress[`${cat.id}_${i}`]?.signedOff ? 'bg-white border border-red-200 text-red-600 hover:bg-red-50' : 'bg-[#005EB8] text-white hover:bg-blue-700'}`}>
                                                     {progress[`${cat.id}_${i}`]?.signedOff ? 'Revoke' : 'Sign Off'}
                                                 </button>
                                             )}
@@ -308,28 +637,103 @@
             );
         };
 
+        const AdminDash = ({ currentUser, onSelect }) => {
+            const [users, setUsers] = useState([]);
+            useEffect(() => {
+                return db.collection('artifacts').doc(appId).collection('public').doc('data').collection('app_users')
+                    .onSnapshot(snap => setUsers(snap.docs.map(d => ({uid: d.id, ...d.data()}))));
+            }, []);
+
+            const updateUserRole = async (targetId, newRole) => {
+                if (targetId === currentUser.uid) {
+                    alert("You cannot change your own role.");
+                    return;
+                }
+                await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('app_users').doc(targetId).update({ role: newRole });
+            };
+
+             const deleteUser = async (targetId) => {
+                if (targetId === currentUser.uid) {
+                    alert("You cannot delete your own account.");
+                    return;
+                }
+                if(confirm("Are you sure? This cannot be undone.")) {
+                    await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('app_users').doc(targetId).delete();
+                }
+            };
+
+            return (
+                <div className="space-y-6 animate-fadeIn">
+                    <div className="bg-white p-6 rounded-2xl border shadow-sm">
+                        <h2 className="text-xl font-bold flex items-center gap-2"><Icon name="users" className="text-[#005EB8]" /> User Management</h2>
+                    </div>
+                    <div className="bg-white rounded-2xl border shadow-sm overflow-hidden">
+                        <table className="w-full text-left text-sm">
+                            <thead className="bg-gray-50 border-b">
+                                <tr>
+                                    <th className="p-4 font-bold text-gray-600">Name</th>
+                                    <th className="p-4 font-bold text-gray-600">Email</th>
+                                    <th className="p-4 font-bold text-gray-600">Role</th>
+                                    <th className="p-4 text-right font-bold text-gray-600">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y">
+                                {users.map(u => (
+                                    <tr key={u.uid} className="hover:bg-gray-50/50">
+                                        <td className="p-4 font-bold text-gray-800">{u.name}</td>
+                                        <td className="p-4 text-gray-500 font-mono text-xs">{u.username}</td>
+                                        <td className="p-4">
+                                            {u.uid === currentUser.uid ? (
+                                                <span className="px-2 py-1 rounded text-xs font-bold uppercase bg-purple-100 text-purple-700">You (Admin)</span>
+                                            ) : (
+                                                <select 
+                                                    value={u.role} 
+                                                    onChange={(e) => updateUserRole(u.uid, e.target.value)}
+                                                    className="border rounded text-xs p-1 bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+                                                >
+                                                    <option value="trainee">Trainee</option>
+                                                    <option value="mentor">Mentor</option>
+                                                    <option value="admin">Admin</option>
+                                                </select>
+                                            )}
+                                        </td>
+                                        <td className="p-4 text-right space-x-2">
+                                            <button onClick={() => onSelect(u)} className="text-gray-400 hover:text-blue-600 p-1" title="View Booklet"><Icon name="book" size={16}/></button>
+                                             {u.uid !== currentUser.uid && (
+                                                <button onClick={() => deleteUser(u.uid)} className="text-gray-400 hover:text-red-600 p-1" title="Delete User"><Icon name="trash" size={16}/></button>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            );
+        };
+
         const MentorDash = ({ currentUser, onSelect }) => {
             const [trainees, setTrainees] = useState([]);
             useEffect(() => {
                 return db.collection('artifacts').doc(appId).collection('public').doc('data').collection('app_users')
-                    .onSnapshot(snap => {
-                        setTrainees(snap.docs.map(d => ({uid: d.id, ...d.data()})).filter(u => u.role === 'trainee'));
-                    });
+                    .where('role', '==', 'trainee')
+                    .onSnapshot(snap => setTrainees(snap.docs.map(d => ({uid: d.id, ...d.data()}))));
             }, []);
 
             return (
                 <div className="space-y-8 animate-fadeIn">
                     <div className="bg-white p-8 rounded-2xl border shadow-sm flex justify-between items-center">
                         <h2 className="text-2xl font-bold flex items-center gap-3"><Icon name="users" className="text-green-600" /> Mentor Dashboard</h2>
+                        <p className="text-gray-500 mt-1">Select a trainee below to view their booklet and sign off competencies.</p>
                     </div>
                     <div className="grid md:grid-cols-3 gap-6">
                         {trainees.map(t => (
-                            <button key={t.uid} onClick={() => onSelect(t)} className="bg-white p-6 rounded-2xl border hover:border-blue-500 hover:shadow-lg text-left transition-all group">
-                                <div className="bg-blue-50 w-12 h-12 rounded-xl flex items-center justify-center text-blue-600 mb-4 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                            <button key={t.uid} onClick={() => onSelect(t)} className="bg-white p-6 rounded-2xl border hover:border-blue-500 hover:shadow-lg text-left transition-all group relative overflow-hidden">
+                                <div className="bg-blue-50 w-12 h-12 rounded-xl flex items-center justify-center text-blue-600 mb-4 group-hover:bg-blue-600 group-hover:text-white transition-all relative z-10">
                                     <Icon name="user" />
                                 </div>
-                                <h3 className="font-bold text-gray-900">{t.name || 'User'}</h3>
-                                <p className="text-xs text-gray-500 font-mono mt-1 truncate">{t.username || t.email}</p>
+                                <h3 className="font-bold text-gray-900 relative z-10">{t.name || 'User'}</h3>
+                                <p className="text-xs text-gray-500 font-mono mt-1 truncate relative z-10">{t.username || t.email}</p>
                             </button>
                         ))}
                     </div>
@@ -343,144 +747,149 @@
             const [view, setView] = useState('dashboard');
             const [selectedTrainee, setSelectedTrainee] = useState(null);
             const [activeModule, setActiveModule] = useState(LEARNING_MODULES[0]);
+            const [error, setError] = useState(null);
+            const [trainees, setTrainees] = useState([]);
 
             useEffect(() => {
-                const unsubscribe = auth.onAuthStateChanged(async (u) => {
+                const unsub = auth.onAuthStateChanged(async (u) => {
                     if (u) {
-                        // Immediately set auth info to prevent blank screen
-                        const basicUser = { 
-                            uid: u.uid, 
-                            name: u.displayName || 'User', 
-                            username: u.email, 
-                            role: 'trainee' 
-                        };
-                        setUser(basicUser);
-
-                        // Try to get profile doc
                         try {
-                            const userRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('app_users').doc(u.uid);
-                            const snap = await userRef.get();
-                            
-                            if (snap.exists()) {
-                                setUser(prev => ({ ...prev, ...snap.data() }));
-                            } else {
-                                // If doc missing (race condition), listen for it
-                                const unsubDoc = userRef.onSnapshot((docSnap) => {
-                                    if (docSnap.exists()) {
-                                        setUser(prev => ({ ...prev, ...docSnap.data() }));
-                                        unsubDoc();
-                                    }
-                                });
-                            }
+                            const basic = { uid: u.uid, name: u.displayName || 'Staff Member', username: u.email, role: 'trainee' };
+                            setUser(basic);
+                            const snap = await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('app_users').doc(u.uid).get();
+                            if (snap.exists) setUser(prev => ({ ...prev, ...snap.data() }));
                         } catch (e) {
-                            console.warn("Profile fetch issue", e);
+                            console.error("Profile load issue:", e);
+                            setError("Error loading profile. Check your Firebase Identity Toolkit API settings.");
                         }
-                    } else { 
-                        setUser(null); 
-                    }
+                    } else { setUser(null); }
                     setLoading(false);
                 });
-                return () => unsubscribe();
+                return () => unsub();
             }, []);
 
+            useEffect(() => {
+                if (user?.role === 'mentor' || user?.role === 'admin') {
+                    return db.collection('artifacts').doc(appId).collection('public').doc('data').collection('app_users')
+                        .where('role', '==', 'trainee')
+                        .onSnapshot(snap => setTrainees(snap.docs.map(d => ({uid: d.id, ...d.data()}))), err => console.error("Trainee fetch fail", err));
+                }
+            }, [user?.role]);
+
             if (loading) return (
-                <div className="min-h-screen flex flex-col items-center justify-center gap-4 text-gray-400 font-bold animate-pulse">
-                    <Icon name="loader" className="animate-spin" size={32} />
-                    <span>Initializing Portal...</span>
+                <div className="min-h-screen flex flex-col items-center justify-center gap-4 text-gray-400 font-bold">
+                    <Icon name="loader" size={32} className="animate-spin" />
+                    <span>Loading Frimley Portal...</span>
                 </div>
             );
             
+            if (error) return <div className="min-h-screen flex items-center justify-center p-4"><div className="bg-white p-6 rounded-xl border border-red-200 text-red-600 font-bold">{error}</div></div>;
             if (!user) return <AuthScreen />;
-
-            // Defensively extract name
-            const currentUserName = user?.name || 'User';
-            const firstName = typeof currentUserName === 'string' ? currentUserName.split(' ')[0] : 'User';
 
             return (
                 <div className="min-h-screen flex flex-col">
-                    <header className="bg-white border-b p-4 flex justify-between items-center sticky top-0 z-30 shadow-sm backdrop-blur-md bg-white/90">
-                        <div className="flex items-center gap-3 cursor-pointer group" onClick={() => { setView('dashboard'); setSelectedTrainee(null); }}>
-                            <div className="bg-[#005EB8] text-white p-1 rounded font-bold text-xs px-2 shadow-md group-hover:scale-110 transition-transform">NHS</div>
-                            <span className="font-bold text-gray-800">Frimley Health</span>
+                    <header className="bg-white border-b p-4 flex justify-between items-center sticky top-0 z-50 shadow-sm">
+                        <div className="flex items-center gap-2 cursor-pointer group" onClick={() => setView('dashboard')}>
+                            <div className="nhs-blue text-white p-1 rounded font-bold text-xs px-2 group-hover:scale-110 transition-transform">NHS</div>
+                            <span className="font-bold text-gray-800">Frimley Endoscopy</span>
                         </div>
-                        <div className="flex items-center gap-6">
-                            <div className="text-right hidden sm:block border-r pr-6 border-gray-100">
-                                <p className="text-xs font-bold text-gray-900">{currentUserName}</p>
-                                <p className="text-[10px] text-[#005EB8] uppercase font-bold tracking-wider">{user?.role || 'trainee'}</p>
-                            </div>
-                            <button onClick={() => auth.signOut()} className="text-gray-400 hover:text-red-500 transition-colors p-2 rounded-lg hover:bg-red-50" title="Logout">
-                                <Icon name="log-out" size={20} />
-                            </button>
+                        <div className="flex items-center gap-4">
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest bg-gray-100 px-2 py-1 rounded">{user.role}</span>
+                            <button onClick={() => auth.signOut()} className="text-gray-400 hover:text-red-500 transition-colors" title="Logout"><Icon name="log-out" /></button>
                         </div>
                     </header>
-                    
-                    <main className="max-w-7xl mx-auto p-6 flex-1 w-full">
-                        {view === 'dashboard' && (
-                            <div className="space-y-8 animate-fadeIn">
-                                <div className="bg-gradient-to-br from-[#005EB8] to-[#002855] p-10 rounded-3xl text-white shadow-xl">
-                                    <h2 className="text-4xl font-bold mb-3">Welcome, {firstName}</h2>
-                                    <p className="text-blue-100 text-lg opacity-90">Access your GI clinical training and track practical sign-offs.</p>
+
+                    <main className="max-w-7xl mx-auto p-4 flex-1 w-full animate-fadeIn">
+                        {view === 'dashboard' ? (
+                            <div className="space-y-6">
+                                <div className="bg-gradient-to-br from-[#005EB8] to-[#002855] p-8 rounded-3xl text-white shadow-lg">
+                                    <h2 className="text-3xl font-bold">Welcome back, {user.name.split(' ')[0]}</h2>
+                                    <p className="opacity-80 text-sm mt-1">Version 2.4 | System Ready</p>
                                 </div>
-                                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                                    <button onClick={() => setView('learning')} className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 hover:border-blue-500 hover:shadow-xl transition-all text-left group">
-                                        <div className="bg-blue-100 w-14 h-14 rounded-2xl flex items-center justify-center text-blue-600 mb-6 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">
-                                            <Icon name="book-open" size={28} />
-                                        </div>
-                                        <h3 className="text-xl font-bold mb-2">Learning Hub</h3>
-                                        <p className="text-gray-500 text-sm">Study clinical protocols, anatomy diagrams, and pathway guidelines.</p>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    <button onClick={() => setView('learning')} className="bg-white p-8 rounded-2xl border hover:border-blue-500 text-left group shadow-sm hover:shadow-lg transition-all">
+                                        <div className="bg-blue-50 p-4 rounded-xl text-blue-600 mb-4 group-hover:bg-blue-600 group-hover:text-white transition-all w-fit"><Icon name="book-open" size={28} /></div>
+                                        <h3 className="font-bold text-xl mb-1">Learning Hub</h3>
+                                        <p className="text-gray-500 text-sm">Protocols & Diagrams</p>
                                     </button>
-                                    <button onClick={() => setView('booklet')} className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 hover:border-green-500 hover:shadow-xl transition-all text-left group">
-                                        <div className="bg-green-100 w-14 h-14 rounded-2xl flex items-center justify-center text-green-600 mb-6 group-hover:bg-green-600 group-hover:text-white transition-all shadow-sm">
-                                            <Icon name="check-circle" size={28} />
-                                        </div>
-                                        <h3 className="text-xl font-bold mb-2">My Booklet</h3>
-                                        <p className="text-gray-500 text-sm">Review your competency scores and monitor mentor sign-offs.</p>
+                                    <button onClick={() => setView('booklet')} className="bg-white p-8 rounded-2xl border hover:border-green-500 text-left group shadow-sm hover:shadow-lg transition-all">
+                                        <div className="bg-green-50 p-4 rounded-xl text-green-600 mb-4 group-hover:bg-green-600 group-hover:text-white transition-all w-fit"><Icon name="check-circle" size={28} /></div>
+                                        <h3 className="font-bold text-xl mb-1">My Booklet</h3>
+                                        <p className="text-gray-500 text-sm">Competency Tracker</p>
                                     </button>
-                                    {(user?.role === 'mentor' || user?.role === 'admin') && (
-                                        <button onClick={() => setView('mentor_dash')} className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 hover:border-purple-500 hover:shadow-xl transition-all text-left group">
-                                            <div className="bg-purple-100 w-14 h-14 rounded-2xl flex items-center justify-center text-purple-600 mb-6 group-hover:bg-purple-600 group-hover:text-white transition-all shadow-sm">
-                                                <Icon name="users" size={28} />
-                                            </div>
-                                            <h3 className="text-xl font-bold mb-2">Mentor Dashboard</h3>
-                                            <p className="text-gray-500 text-sm">Manage trainees and sign off their practical endoscopy skills.</p>
+                                    {user.role === 'mentor' && (
+                                        <button onClick={() => setView('mentor_dash')} className="bg-white p-8 rounded-2xl border hover:border-purple-500 text-left group shadow-sm hover:shadow-lg transition-all">
+                                            <div className="bg-purple-50 p-4 rounded-xl text-purple-600 mb-4 group-hover:bg-purple-600 group-hover:text-white transition-all w-fit"><Icon name="users" size={28} /></div>
+                                            <h3 className="font-bold text-xl mb-1">Mentor Dashboard</h3>
+                                            <p className="text-gray-500 text-sm">Sign-off Trainees</p>
+                                        </button>
+                                    )}
+                                    {user.role === 'admin' && (
+                                        <button onClick={() => setView('admin_dash')} className="bg-white p-8 rounded-2xl border hover:border-orange-500 text-left group shadow-sm hover:shadow-lg transition-all">
+                                            <div className="bg-orange-50 p-4 rounded-xl text-orange-600 mb-4 group-hover:bg-orange-600 group-hover:text-white transition-all w-fit"><Icon name="settings" size={28} /></div>
+                                            <h3 className="font-bold text-xl mb-1">Admin Panel</h3>
+                                            <p className="text-gray-500 text-sm">Manage Users & Roles</p>
                                         </button>
                                     )}
                                 </div>
+                                {(user.role === 'mentor' || user.role === 'admin') && (
+                                    <div className="mt-8 space-y-4">
+                                        <h3 className="font-bold text-gray-700 flex items-center gap-2"><Icon name="users" size={18} className="text-[#005EB8]"/> Your Trainees</h3>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                                            {trainees.length === 0 ? (
+                                                <p className="text-xs text-gray-400 italic col-span-full">No trainees registered yet.</p>
+                                            ) : (
+                                                trainees.map(t => (
+                                                    <button key={t.uid} onClick={() => { setSelectedTrainee(t); setView('trainee_view'); }} className="bg-white p-4 rounded-xl border hover:border-blue-500 text-left transition-all group shadow-sm flex items-center gap-3">
+                                                        <div className="bg-gray-100 p-2 rounded-lg text-gray-400 group-hover:bg-blue-100 group-hover:text-blue-600 transition-all"><Icon name="user" size={16} /></div>
+                                                        <span className="font-bold text-sm text-gray-800">{t.name}</span>
+                                                    </button>
+                                                ))
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
-                        )}
-
-                        {view === 'learning' && (
-                            <div className="flex flex-col md:flex-row gap-8 animate-fadeIn">
-                                <div className="md:w-72 space-y-2 flex-shrink-0">
-                                    <button onClick={() => setView('dashboard')} className="w-full text-left p-4 mb-4 text-sm font-bold text-gray-500 flex items-center gap-2 hover:bg-gray-100 rounded-2xl transition-colors">
-                                        <Icon name="chevron-left" /> Back to Dashboard
+                        ) : view === 'learning' ? (
+                            <div className="flex flex-col md:flex-row gap-8">
+                                <div className="md:w-64 space-y-1 flex-shrink-0">
+                                    <button onClick={() => setView('dashboard')} className="w-full text-left p-3 mb-4 text-xs font-bold text-gray-500 flex items-center gap-2 hover:bg-white rounded-xl border transition-colors shadow-sm">
+                                        <Icon name="chevron-left" size={14} /> Back
                                     </button>
                                     {LEARNING_MODULES.map(m => (
-                                        <button key={m.id} onClick={() => setActiveModule(m)} className={`w-full text-left p-4 rounded-2xl text-sm font-bold transition-all flex items-center gap-3 ${activeModule.id === m.id ? 'bg-[#005EB8] text-white shadow-lg shadow-blue-200' : 'text-gray-600 hover:bg-white hover:shadow-sm'}`}>
-                                            <Icon name={m.icon} size={18} /> {m.title}
+                                        <button key={m.id} onClick={() => setActiveModule(m)} className={`w-full text-left p-3 rounded-xl text-xs font-bold transition-all flex items-center gap-3 ${activeModule.id === m.id ? 'bg-[#005EB8] text-white shadow-md' : 'text-gray-600 hover:bg-white border border-transparent hover:border-gray-200'}`}>
+                                            <Icon name={m.icon} size={16} /> {m.title}
                                         </button>
                                     ))}
                                 </div>
                                 <div className="flex-1 bg-white p-10 rounded-3xl border border-gray-100 shadow-sm min-h-[600px]">
-                                    <h2 className="text-3xl font-bold mb-8 text-gray-900">{activeModule.title}</h2>
+                                    <h2 className="text-3xl font-bold mb-8 text-gray-900 border-b pb-4">{activeModule.title}</h2>
                                     <div className="space-y-12">
                                         {activeModule.sections.map((s, i) => (
                                             <div key={i} className="prose prose-blue max-w-none">
-                                                <h3 className="text-xl font-bold border-b pb-3 text-blue-900">{s.title}</h3>
-                                                <div className="mt-6 text-gray-700 leading-relaxed">{s.content}</div>
+                                                <h3 className="text-xl font-bold mb-4 text-[#005EB8] flex items-center gap-2">{s.title}</h3>
+                                                <div className="text-gray-700 leading-loose">{s.content}</div>
                                             </div>
                                         ))}
                                     </div>
                                 </div>
                             </div>
+                        ) : (
+                            <BookletView 
+                                targetUser={view === 'booklet' ? user : selectedTrainee} 
+                                currentUser={user} 
+                                onBack={() => { setView(view === 'booklet' ? 'dashboard' : (user.role === 'admin' ? 'admin_dash' : 'mentor_dash')); setSelectedTrainee(null); }} 
+                            />
                         )}
 
-                        {view === 'booklet' && <BookletView targetUser={user} currentUser={user} onBack={() => setView('dashboard')} />}
-                        
                         {view === 'mentor_dash' && <MentorDash currentUser={user} onSelect={(t) => { setSelectedTrainee(t); setView('trainee_view'); }} />}
                         
-                        {view === 'trainee_view' && selectedTrainee && <BookletView targetUser={selectedTrainee} currentUser={user} onBack={() => setView('mentor_dash')} />}
+                        {view === 'admin_dash' && <AdminDash currentUser={user} onSelect={(t) => { setSelectedTrainee(t); setView('trainee_view'); }} />}
+
                     </main>
+                    <footer className="p-6 text-center text-xs text-gray-400 border-t mt-auto">
+                        Training Prototype | NHS Frimley Endoscopy Unit | 2026
+                    </footer>
                 </div>
             );
         };
