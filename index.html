@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frimley Endoscopy Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Firebase Compat SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .animate-fadeIn { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        details summary::-webkit-details-marker { display: none; }
+    </style>
+</head>
+<body class="bg-gray-50/50">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useMemo } = React;
+
+        // --- FIREBASE CONFIG ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyCU1q6ouoKGxLnlfnJpqLHiowPJN1aroQ8",
+            authDomain: "gi-learning-e-booklet-24602.firebaseapp.com",
+            projectId: "gi-learning-e-booklet-24602",
+            storageBucket: "gi-learning-e-booklet-24602.firebasestorage.app",
+            messagingSenderId: "1083262909148",
+            appId: "1:1083262909148:web:268cea49173834cb1f1219",
+            measurementId: "G-ZV9YB3LQ3B"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const appId = "frimley-health-v2";
+
+        // --- COMPONENTS ---
+        const Icon = ({ name, size = 20, className = "" }) => {
+            useEffect(() => { lucide.createIcons(); }, [name]);
+            return <i data-lucide={name} style={{ width: size, height: size }} className={`inline-block ${className}`}></i>;
+        };
+
+        const ProgressBar = ({ progress }) => (
+            <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                <div className="bg-[#005EB8] h-2 rounded-full transition-all duration-500" style={{ width: `${progress}%` }}></div>
+            </div>
+        );
+
+        // --- DIAGRAMS ---
+        const StomachDiagram = () => (
+            <div className="my-8 bg-white p-8 rounded-xl border border-gray-200 shadow-sm flex flex-col items-center">
+                <h4 className="font-bold text-gray-800 mb-6 flex items-center gap-2 text-lg">
+                    <Icon name="activity" className="text-red-500"/> Gastric Anatomy
+                </h4>
+                <svg width="320" height="260" viewBox="0 0 320 260" xmlns="http://www.w3.org/2000/svg" className="max-w-full drop-shadow-sm">
+                    <defs>
+                        <linearGradient id="stomachGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stopColor="#fecaca" />
+                            <stop offset="100%" stopColor="#f87171" />
+                        </linearGradient>
+                    </defs>
+                    <path d="M140 10 L140 60" stroke="#fee2e2" strokeWidth="28" strokeLinecap="round" />
+                    <text x="160" y="35" fontSize="11" fill="#7f1d1d" fontWeight="bold">Oesophagus</text>
+                    <path d="M126 60 C 50 60, 20 100, 40 170 C 50 210, 100 240, 160 230 C 200 220, 220 190, 200 170" fill="url(#stomachGradient)" stroke="#ef4444" strokeWidth="2"/>
+                    <path d="M200 170 C 230 170, 250 200, 260 230" stroke="#fee2e2" strokeWidth="22" fill="none" strokeLinecap="round"/>
+                    <text x="230" y="250" fontSize="11" fill="#7f1d1d" fontWeight="bold">Duodenum</text>
+                    <text x="10" y="70" fontSize="12" fill="#991b1b" fontWeight="bold">Fundus</text>
+                    <text x="100" y="150" fontSize="14" fill="#7f1d1d" fontWeight="bold" opacity="0.4">BODY</text>
+                    <text x="140" y="255" fontSize="12" fill="#991b1b" fontWeight="bold">Antrum</text>
+                    <circle cx="140" cy="60" r="4" fill="#b91c1c" />
+                    <text x="195" y="65" fontSize="10" fill="#b91c1c">GE Junction (Z-Line)</text>
+                </svg>
+            </div>
+        );
+
+        const ColonDiagram = () => (
+            <div className="my-8 bg-white p-8 rounded-xl border border-gray-200 shadow-sm flex flex-col items-center">
+                <h4 className="font-bold text-gray-800 mb-6 flex items-center gap-2 text-lg">
+                    <Icon name="activity" className="text-green-600"/> Large Bowel Segments
+                </h4>
+                <svg width="340" height="240" viewBox="0 0 340 240" xmlns="http://www.w3.org/2000/svg" className="max-w-full drop-shadow-sm">
+                    <path d="M60 180 Q 50 120, 60 60" stroke="#86efac" strokeWidth="30" fill="none" strokeLinecap="round"/>
+                    <path d="M60 60 Q 150 70, 260 60" stroke="#4ade80" strokeWidth="30" fill="none" strokeLinecap="round"/>
+                    <path d="M260 60 Q 270 120, 260 160" stroke="#22c55e" strokeWidth="30" fill="none" strokeLinecap="round"/>
+                    <path d="M260 160 Q 260 200, 210 200 Q 180 200, 160 180" stroke="#16a34a" strokeWidth="25" fill="none" strokeLinecap="round"/>
+                    <path d="M160 180 L 160 210" stroke="#15803d" strokeWidth="25" fill="none" strokeLinecap="round"/>
+                    <text x="30" y="120" fontSize="11" fill="#14532d" fontWeight="bold">Ascending</text>
+                    <text x="160" y="40" fontSize="11" fill="#14532d" fontWeight="bold" textAnchor="middle">Transverse</text>
+                    <text x="260" y="230" fontSize="11" fill="#14532d" fontWeight="bold">Sigmoid</text>
+                    <text x="120" y="200" fontSize="11" fill="#14532d" fontWeight="bold">Rectum</text>
+                    <circle cx="60" cy="180" r="8" fill="#15803d" stroke="white" strokeWidth="2"/>
+                    <text x="20" y="195" fontSize="11" fill="#14532d" fontWeight="bold">Caecum</text>
+                </svg>
+            </div>
+        );
+
+        const PolypDiagram = () => (
+            <div className="my-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-pink-50 p-6 rounded-xl border border-pink-100 flex flex-col items-center">
+                    <svg width="120" height="120" viewBox="0 0 120 120">
+                        <path d="M10 110 L110 110" stroke="#be185d" strokeWidth="3" strokeLinecap="round"/>
+                        <path d="M50 110 L50 60 Q 50 50, 60 50 Q 70 50, 70 60 L 70 110" fill="#be185d" />
+                        <ellipse cx="60" cy="45" rx="35" ry="30" fill="#f472b6" />
+                    </svg>
+                    <span className="font-bold text-pink-900 text-lg mt-3">Pedunculated (Ip)</span>
+                </div>
+                <div className="bg-pink-50 p-6 rounded-xl border border-pink-100 flex flex-col items-center">
+                    <svg width="120" height="120" viewBox="0 0 120 120">
+                        <path d="M10 110 L110 110" stroke="#be185d" strokeWidth="3" strokeLinecap="round"/>
+                        <path d="M25 110 Q 30 60, 60 60 Q 90 60, 95 110" fill="#f472b6" />
+                    </svg>
+                    <span className="font-bold text-pink-900 text-lg mt-3">Sessile (Is)</span>
+                </div>
+            </div>
+        );
+
+        // --- DATA ---
+        const LEARNING_MODULES = [
+            { id: 'intro', title: 'Introduction', icon: 'briefcase', sections: [{ title: 'Welcome', content: <div>Welcome to Frimley Health. This booklet covers the competencies required for the GI Unit.</div> }] },
+            { id: 'sec_a', title: 'Section A: Pathway', icon: 'clipboard-check', sections: [{ title: 'Admission', content: <div>Check ID, NBM status (6hrs food, 2hrs clear fluids), and Escort availability.</div> }] },
+            { id: 'sec_b', title: 'Section B: Procedures', icon: 'activity', sections: [{ title: 'OGD & Colonoscopy', content: <div>Covers diagnostic and therapeutic basics for upper and lower GI procedures.</div> }] },
+            { id: 'sec_c', title: 'Section C: Upper GI', icon: 'stethoscope', sections: [{ title: 'Gastric Anatomy', content: <StomachDiagram /> }] },
+            { id: 'sec_d', title: 'Section D: Lower GI', icon: 'microscope', sections: [{ title: 'Pathology', content: <><ColonDiagram /><PolypDiagram /></> }] },
+            { id: 'sec_e', title: 'Section E: Induction', icon: 'graduation-cap', sections: [{ title: 'Induction', content: <div>A structured 12-week programme across Recovery, Room, and Cleaning areas.</div> }] },
+            { id: 'sec_f', title: 'Section F: Advanced', icon: 'award', sections: [{ title: 'Advanced Roles', content: <div>Obtaining Consent and managing conscious sedation.</div> }] }
+        ];
+
+        const CATEGORIES = [
+            { id: 'prof', title: '1. Professional Values', items: ["Promotes positive nursing image.", "Respects patient dignity.", "Maintains confidentiality.", "Reliable and punctual."] },
+            { id: 'comm', title: '2. Communication & Assessment', items: ["Obtains full nursing history.", "Pre-assesses for sedation.", "Documentation is up-to-date."] },
+            { id: 'upper', title: '3. Upper GI Skills', items: ["Biopsy/CLO test.", "Variceal banding setup.", "Heater probe therapy."] },
+            { id: 'lower', title: '4. Lower GI Skills', items: ["Polypectomy assistance.", "Tattooing technique.", "Scope Guide setup."] },
+            { id: 'ercp', title: '5. ERCP Skills', items: ["Injection of dye.", "Sphincterotomy control.", "Stenting assistance."] },
+            { id: 'ic', title: '6. Infection Control', items: ["Hand hygiene standards.", "PPE risk assessment.", "Decontamination processes."] }
+        ];
+
+        // --- AUTH & CORE UI ---
+        const AuthScreen = () => {
+            const [isRegistering, setIsRegistering] = useState(false);
+            const [email, setEmail] = useState('');
+            const [password, setPassword] = useState('');
+            const [fullName, setFullName] = useState('');
+            const [error, setError] = useState('');
+            const [loading, setLoading] = useState(false);
+
+            const handleAuth = async (e) => {
+                e.preventDefault();
+                setLoading(true);
+                try {
+                    if (isRegistering) {
+                        const cred = await auth.createUserWithEmailAndPassword(email, password);
+                        await cred.user.updateProfile({ displayName: fullName });
+                        await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('app_users').doc(cred.user.uid).set({
+                            username: email, name: fullName, role: 'trainee', createdAt: new Date().toISOString()
+                        });
+                    } else {
+                        await auth.signInWithEmailAndPassword(email, password);
+                    }
+                } catch (err) { setError(err.message); }
+                finally { setLoading(false); }
+            };
+
+            return (
+                <div className="min-h-screen flex items-center justify-center p-4 bg-gray-100">
+                    <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full border-t-8 border-[#005EB8]">
+                        <div className="text-center mb-6">
+                            <div className="bg-[#005EB8] text-white w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-4 font-bold">NHS</div>
+                            <h1 className="text-2xl font-bold">Endoscopy Portal</h1>
+                        </div>
+                        <div className="bg-amber-50 p-4 rounded-lg text-xs text-amber-800 mb-6 flex gap-3">
+                            <Icon name="alert-triangle" size={20} />
+                            <span><b>Notice:</b> This is a prototype. Do NOT use official NHS passwords. Use dummy emails (e.g. nurse1@test.com).</span>
+                        </div>
+                        <form onSubmit={handleAuth} className="space-y-4">
+                            {error && <div className="text-red-500 text-xs p-2 bg-red-50 border border-red-100 rounded">{error}</div>}
+                            {isRegistering && <input type="text" placeholder="Full Name" className="w-full p-3 border rounded-xl" onChange={e => setFullName(e.target.value)} required />}
+                            <input type="email" placeholder="Email" className="w-full p-3 border rounded-xl" onChange={e => setEmail(e.target.value)} required />
+                            <input type="password" placeholder="Password" className="w-full p-3 border rounded-xl" onChange={e => setPassword(e.target.value)} required />
+                            <button className="w-full bg-[#005EB8] text-white py-3.5 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg">
+                                {loading ? <Icon name="loader" className="animate-spin" /> : (isRegistering ? "Register Account" : "Sign In")}
+                            </button>
+                        </form>
+                        <button onClick={() => setIsRegistering(!isRegistering)} className="w-full mt-6 text-sm text-blue-600 font-medium">
+                            {isRegistering ? "Back to Login" : "Need an account? Register"}
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        const BookletView = ({ targetUser, currentUser, onBack }) => {
+            const [progress, setProgress] = useState({});
+            const isMentor = currentUser.role === 'mentor' || currentUser.role === 'admin';
+
+            useEffect(() => {
+                const unsubscribe = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('competencies').doc(`${targetUser.username}_progress`)
+                    .onSnapshot(doc => setProgress(doc.data() || {}));
+                return () => unsubscribe();
+            }, [targetUser]);
+
+            const updateScore = (catId, idx, type, val) => {
+                const key = `${catId}_${idx}`;
+                const newProg = { ...progress, [key]: { ...(progress[key] || {}), [type]: val } };
+                db.collection('artifacts').doc(appId).collection('public').doc('data').collection('competencies').doc(`${targetUser.username}_progress`).set(newProg);
+            };
+
+            const toggleSignOff = (catId, idx) => {
+                const key = `${catId}_${idx}`;
+                const current = progress[key]?.signedOff;
+                updateScore(catId, idx, 'signedOff', !current);
+                updateScore(catId, idx, 'mentorName', !current ? currentUser.name : '');
+            };
+
+            return (
+                <div className="space-y-8 animate-fadeIn">
+                    <div className="flex items-center justify-between bg-white p-6 rounded-2xl border shadow-sm">
+                        <div className="flex items-center gap-4">
+                            <button onClick={onBack} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><Icon name="arrow-left" /></button>
+                            <h2 className="text-2xl font-bold">{targetUser.name}'s Booklet</h2>
+                        </div>
+                    </div>
+                    {CATEGORIES.map(cat => (
+                        <div key={cat.id} className="bg-white rounded-2xl border shadow-sm overflow-hidden">
+                            <div className="bg-gray-50 p-4 border-b font-bold text-gray-700">{cat.title}</div>
+                            <div className="divide-y">
+                                {cat.items.map((item, i) => (
+                                    <div key={i} className="p-5 flex flex-col md:flex-row justify-between gap-6">
+                                        <div className="flex-1">
+                                            <p className="text-sm font-medium text-gray-800">{item}</p>
+                                            {progress[`${cat.id}_${i}`]?.signedOff && (
+                                                <span className="text-[10px] text-green-600 font-bold flex items-center gap-1 mt-1">
+                                                    <Icon name="award" size={12} /> Signed off by {progress[`${cat.id}_${i}`].mentorName}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="flex flex-wrap items-center gap-4">
+                                            <div className="flex flex-col">
+                                                <label className="text-[10px] uppercase font-bold text-gray-400">Self</label>
+                                                <select className="border rounded-lg p-1 text-xs bg-gray-50" 
+                                                        value={progress[`${cat.id}_${i}`]?.selfScore || 0}
+                                                        onChange={e => updateScore(cat.id, i, 'selfScore', e.target.value)}
+                                                        disabled={progress[`${cat.id}_${i}`]?.signedOff}>
+                                                    {SCORING_SYSTEM.map(s => <option key={s.score} value={s.score}>{s.score} - {s.label}</option>)}
+                                                </select>
+                                            </div>
+                                            {isMentor && (
+                                                <button onClick={() => toggleSignOff(cat.id, i)} 
+                                                        className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${progress[`${cat.id}_${i}`]?.signedOff ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-green-600 text-white shadow-md'}`}>
+                                                    {progress[`${cat.id}_${i}`]?.signedOff ? 'Revoke' : 'Sign Off'}
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            );
+        };
+
+        const MentorDash = ({ currentUser, onSelect }) => {
+            const [trainees, setTrainees] = useState([]);
+            useEffect(() => {
+                return db.collection('artifacts').doc(appId).collection('public').doc('data').collection('app_users')
+                    .onSnapshot(snap => setTrainees(snap.docs.map(d => ({uid: d.id, ...d.data()})).filter(u => u.role === 'trainee')));
+            }, []);
+
+            return (
+                <div className="space-y-8 animate-fadeIn">
+                    <div className="bg-white p-8 rounded-2xl border shadow-sm flex justify-between items-center">
+                        <h2 className="text-2xl font-bold flex items-center gap-3"><Icon name="users" className="text-green-600" /> Mentor Dashboard</h2>
+                    </div>
+                    <div className="grid md:grid-cols-3 gap-6">
+                        {trainees.map(t => (
+                            <button key={t.uid} onClick={() => onSelect(t)} className="bg-white p-6 rounded-2xl border hover:border-blue-500 hover:shadow-lg text-left transition-all group">
+                                <div className="bg-blue-50 w-12 h-12 rounded-xl flex items-center justify-center text-blue-600 mb-4 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                                    <Icon name="user" />
+                                </div>
+                                <h3 className="font-bold text-gray-900">{t.name}</h3>
+                                <p className="text-xs text-gray-500 font-mono mt-1">{t.username}</p>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [user, setUser] = useState(null);
+            const [loading, setLoading] = useState(true);
+            const [view, setView] = useState('dashboard');
+            const [selectedTrainee, setSelectedTrainee] = useState(null);
+            const [activeModule, setActiveModule] = useState(LEARNING_MODULES[0]);
+
+            useEffect(() => {
+                return auth.onAuthStateChanged(async (u) => {
+                    if (u) {
+                        const snap = await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('app_users').doc(u.uid).get();
+                        setUser({ uid: u.uid, ...(snap.exists() ? snap.data() : { name: u.displayName, role: 'trainee', username: u.email }) });
+                    } else { setUser(null); }
+                    setLoading(false);
+                });
+            }, []);
+
+            if (loading) return <div className="min-h-screen flex flex-col items-center justify-center gap-4 text-gray-400"><Icon name="loader" className="animate-spin" size={32} /><span>Initializing Portal...</span></div>;
+            if (!user) return <AuthScreen />;
+
+            return (
+                <div className="min-h-screen flex flex-col">
+                    <header className="bg-white border-b p-4 flex justify-between items-center sticky top-0 z-30 shadow-sm backdrop-blur-md bg-white/90">
+                        <div className="flex items-center gap-3 cursor-pointer" onClick={() => { setView('dashboard'); setSelectedTrainee(null); }}>
+                            <div className="bg-[#005EB8] text-white p-1 rounded font-bold text-xs px-2 shadow-sm">NHS</div>
+                            <span className="font-bold text-gray-800">Frimley Health</span>
+                        </div>
+                        <div className="flex items-center gap-6">
+                            <div className="text-right hidden sm:block border-r pr-6">
+                                <p className="text-xs font-bold text-gray-900">{user.name}</p>
+                                <p className="text-[10px] text-[#005EB8] uppercase font-bold tracking-wider">{user.role}</p>
+                            </div>
+                            <button onClick={() => auth.signOut()} className="text-gray-400 hover:text-red-500 transition-colors p-2 rounded-lg hover:bg-red-50"><Icon name="log-out" size={20} /></button>
+                        </div>
+                    </header>
+                    
+                    <main className="max-w-7xl mx-auto p-6 flex-1 w-full">
+                        {view === 'dashboard' && (
+                            <div className="space-y-8">
+                                <div className="bg-gradient-to-br from-[#005EB8] to-[#002855] p-10 rounded-3xl text-white shadow-xl">
+                                    <h2 className="text-4xl font-bold mb-3">Welcome, {user.name.split(' ')[0]}</h2>
+                                    <p className="text-blue-100 text-lg opacity-90">Ready to continue your GI clinical training?</p>
+                                </div>
+                                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                                    <button onClick={() => setView('learning')} className="bg-white p-8 rounded-3xl shadow-sm border hover:border-blue-500 hover:shadow-xl transition-all text-left group">
+                                        <div className="bg-blue-100 w-14 h-14 rounded-2xl flex items-center justify-center text-blue-600 mb-6 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                                            <Icon name="book-open" size={28} />
+                                        </div>
+                                        <h3 className="text-xl font-bold mb-2">Learning Hub</h3>
+                                        <p className="text-gray-500 text-sm">Review protocols, anatomy diagrams, and induction timelines.</p>
+                                    </button>
+                                    <button onClick={() => setView('booklet')} className="bg-white p-8 rounded-3xl shadow-sm border hover:border-green-500 hover:shadow-xl transition-all text-left group">
+                                        <div className="bg-green-100 w-14 h-14 rounded-2xl flex items-center justify-center text-green-600 mb-6 group-hover:bg-green-600 group-hover:text-white transition-all">
+                                            <Icon name="check-circle" size={28} />
+                                        </div>
+                                        <h3 className="text-xl font-bold mb-2">My Booklet</h3>
+                                        <p className="text-gray-500 text-sm">Self-assess your competencies and track your practical skill sign-offs.</p>
+                                    </button>
+                                    {(user.role === 'mentor' || user.role === 'admin') && (
+                                        <button onClick={() => setView('mentor_dash')} className="bg-white p-8 rounded-3xl shadow-sm border hover:border-purple-500 hover:shadow-xl transition-all text-left group">
+                                            <div className="bg-purple-100 w-14 h-14 rounded-2xl flex items-center justify-center text-purple-600 mb-6 group-hover:bg-purple-600 group-hover:text-white transition-all">
+                                                <Icon name="users" size={28} />
+                                            </div>
+                                            <h3 className="text-xl font-bold mb-2">Mentor View</h3>
+                                            <p className="text-gray-500 text-sm">Monitor trainees assigned to you and sign off their practical skills.</p>
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {view === 'learning' && (
+                            <div className="flex flex-col md:flex-row gap-8 animate-fadeIn">
+                                <div className="md:w-72 space-y-2 flex-shrink-0">
+                                    <button onClick={() => setView('dashboard')} className="w-full text-left p-4 mb-4 text-sm font-bold text-gray-500 flex items-center gap-2 hover:bg-gray-100 rounded-2xl transition-colors">
+                                        <Icon name="chevron-left" /> Back to Dashboard
+                                    </button>
+                                    {LEARNING_MODULES.map(m => (
+                                        <button key={m.id} onClick={() => setActiveModule(m)} className={`w-full text-left p-4 rounded-2xl text-sm font-bold transition-all flex items-center gap-3 ${activeModule.id === m.id ? 'bg-[#005EB8] text-white shadow-lg' : 'text-gray-600 hover:bg-white hover:shadow-sm'}`}>
+                                            <Icon name={m.icon} size={18} /> {m.title}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="flex-1 bg-white p-10 rounded-3xl border shadow-sm min-h-[600px]">
+                                    <h2 className="text-3xl font-bold mb-8 text-gray-900">{activeModule.title}</h2>
+                                    <div className="space-y-12">
+                                        {activeModule.sections.map((s, i) => (
+                                            <div key={i} className="prose prose-blue max-w-none">
+                                                <h3 className="text-xl font-bold border-b pb-3 text-blue-900">{s.title}</h3>
+                                                <div className="mt-6 text-gray-700 leading-relaxed">{s.content}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {view === 'booklet' && <BookletView targetUser={user} currentUser={user} onBack={() => setView('dashboard')} />}
+                        
+                        {view === 'mentor_dash' && <MentorDash currentUser={user} onSelect={(t) => { setSelectedTrainee(t); setView('trainee_view'); }} />}
+                        
+                        {view === 'trainee_view' && selectedTrainee && <BookletView targetUser={selectedTrainee} currentUser={user} onBack={() => setView('mentor_dash')} />}
+                    </main>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
